@@ -16,7 +16,8 @@ const fetchRandomDebris = async (count) => {
 	const objects = await res.json()
 	return objects
 }
-
+var DebrisArray = fetchRandomDebris(185);
+var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude,debris.longitude,debris.altitude));
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
 	const res = await fetch(`https://emicatronic.com/api/orbit/${catalogNumber}/${date}`)
 	const data = await res.json()
@@ -58,7 +59,7 @@ const setUp = async () => {
 	currentDebris = currentState.selectedDebris[0]
 }
 
-setUp()
+//setUp() 
 
 
 
@@ -151,13 +152,15 @@ const orbitals = new THREE.Group();
 scene.add(orbitals);
 
 //add debris & rotate it
+function addDebris(lat,long,alt){
 const debris_geometry = new THREE.SphereGeometry(1, 100, 100);
 const debris_material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 const debris = new THREE.Mesh(debris_geometry, debris_material);
-debris.position.set(30, 30, 0);
+debris.position.set(lat,long, alt);
 var debris_angle = 0.00;
 orbitals.add(debris);
-function animate_debris() {
+}
+/* function animate_debris() {
 
 	requestAnimationFrame(animate_debris);
 	debris_angle += Math.PI / 180;
@@ -165,7 +168,7 @@ function animate_debris() {
 	renderer.render(scene, camera);
 
 }
-animate_debris();
+animate_debris();*/
 
 
 //satellite import
