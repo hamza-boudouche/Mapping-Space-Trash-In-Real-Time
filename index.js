@@ -38,7 +38,7 @@ app.use(morgan('dev'))
 app.use(cors(corsOptions));
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-// app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/3d_globe'));
 
 setUp(redisClient)
 

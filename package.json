@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@timohausmann/quadtree-js": "^1.2.4",
     "async-redis": "^2.0.0",
     "axios": "^0.22.0",
     "cors": "^2.8.5",
