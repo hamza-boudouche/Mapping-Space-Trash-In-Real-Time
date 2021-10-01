@@ -1,0 +1,72 @@
+send the first 20 objects
+
+have a counter for downloaded objects
+
+first get the first 20 objects, and store the number of objects fetched, and then get the next 20 objects when the user requests more
+
+==> api endpoint = GET api/objects/:count
+
+		return a random set of objects of size `count`
+
+		answer = 
+		{
+			[
+				name, 
+				intlDesignator, 
+				catalogNumber,
+				type,
+				country,
+			]
+		}
+
+		excluded = 
+		{
+			inclination,
+			apogee,
+			perigee,
+			file,
+			launchSiteCode,
+			launchDate,
+			rcsValue,
+			launchYear,
+			orbitalPeriod,
+		}
+
+==> api endpoint = GET api/orbit/:catalogNumber/:date
+		answer = 
+		{
+			latitude,
+			longitude,
+			altitude,
+			speed,
+			launchDate,
+			apogee,
+			perigee,
+			inclination,
+		}
+
+when user tries to search for something by name, send an http request to this endpoint onchange
+
+==> api endpoint = GET api/objects/autoSuggest/:queryString
+		answer = 
+		[
+			{
+				name, 
+				intlDesignator, 
+				catalogNumber,
+				type,
+				country,
+			}
+		]
+
+when user validates search
+
+==> api endpoint = GET api/objects/search/:queryString
+		answer = 
+		[
+			name, 
+			intlDesignator, 
+			catalogNumber,
+			type,
+			country,
+		]
