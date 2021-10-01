@@ -26,10 +26,10 @@ const redisCredentials = {
 const redisClient = redis.createClient(redisCredentials)
 
 const setUp = async (client) => {
-	const objects = await getObjects(100, undefined);
+	const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 	await writeObjectsToCash(client, objects);
 	setInterval(async () => {
-		const objects = await getObjects(100, undefined);
+		const objects = await getObjects(1000, 25000);
 		await writeObjectsToCash(client, objects);
 	}, 60 * 60 * 1000)
 }
@@ -49,18 +49,14 @@ app.get('/test', (req, res) => {
 app.get('/api/objects/:count', async (req, res) => {
 	const count = Number(req.params['count'])
 	const result = await getObjectsRequest(redisClient, count)
-	console.log(result)
 	return res.json(result)
 })
 
 app.get('/api/orbit/:catalogNumber/:date', async (req, res) => {
 	const catalogNumber = Number(req.params['catalogNumber'])
 	const date = new Date(req.params['date'])
-	let result = null;
-	try {
-		result = await getOrbitAndInfoRequest(redisClient, catalogNumber, date)
-	} catch (err) {
-		console.log(err)
+	const result = await getOrbitAndInfoRequest(redisClient, catalogNumber, date);
+	if (result === -1) {
 		return res.send('No GP data found')
 	}
 	return res.json(result)
@@ -81,4 +77,3 @@ app.get('/api/objects/search/:queryString', (req, res) => {
 app.listen(port, () => {
 	console.log(`Server is listening on port ${port}`)
 })
-

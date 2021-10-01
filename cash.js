@@ -1,4 +1,3 @@
-const redis = require('async-redis')
 const MiniSearch = require('minisearch')
 const { getPosAndVel } = require('./helpers')
 const catalogNumbers = [];
@@ -23,10 +22,6 @@ const writeObjectsToCash = async (client, objects) => {
 	miniSearch = new MiniSearch({
 		fields: ['name', 'intlDesignator', 'catalogNumber'],
 		storeFields: ['name', 'intlDesignator', 'catalogNumber', 'type', 'country']
-		// extractField: (document, fieldName) => {
-		// 	// If field name is 'pubYear', extract just the year from 'pubDate'
-		// 	return fieldName
-		// }
 	})
 	// add all objects in miniSearch 
 	miniSearch.addAll(objects)
@@ -42,10 +37,17 @@ const getObject = async (client, catalogNumber) => {
 	}
 }
 
-const getObjectsRequest = async (client, count = 20) => {
+const getObjectsRequest = async (client, count = 20) => { // this really needs to be changed, it's causing problems
+	// idea:
+	// while still doesn't have a full `count` generated objects: 
+	// 		generate random number 
+	//    find out catalogNumber of it
+	//    find out if it has GP data
+	//        if so add it to array to return
+	//        if not skip
+
 	// check if catalogNumbers array is populated
 	if (lnCatalogNumbers === 0) {
-		// if not exit function
 		return
 	}
 	// if so generate array of length:count and that contains random integers between 0 and lnCatalogNumbers 
@@ -77,9 +79,12 @@ const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
 	if (existing) {
 		return JSON.parse(existing)
 	}
-	// else retreive data from celestrack api
+	// else retreive data from celestrack api (stored in cash)
 	const obj = await getObject(client, catalogNumber)
 	const posAndVel = await getPosAndVel(catalogNumber, date)
+	if (posAndVel === -1) {
+		return -1;
+	}
 	const res = { ...obj, ...posAndVel }
 	await client.set(`tle-${catalogNumber}`, JSON.stringify(res), 'EX', 60 * 60)
 	return res

@@ -2,7 +2,6 @@ require("dotenv").config();
 const axios = require('axios').default;
 const spacetrack = require('spacetrack');
 const satellite = require('satellite.js');
-const redis = require('async-redis')
 
 spacetrack.login({
 	username: process.env.SPACE_TRACK_USERNAME,
@@ -27,12 +26,18 @@ const getTle = async (catalogNumber) => {
 	const response = await axios.get(`https://celestrak.com/NORAD/elements/gp.php?CATNR=${catalogNumber}&FORMAT=2LE`)
 	const body = response.data;
 	console.log(body)
+	if (body === 'No GP data found') {
+		return -1;
+	}
 	return body.split('\r\n');
 }
 
 const getPosAndVel = async (catalogNumber, date) => {
-	const [line1, line2] = await getTle(catalogNumber)
-	console.log([line1, line2])
+	const tle = await getTle(catalogNumber)
+	if (tle === -1) {
+		return -1;
+	}
+	const [line1, line2] = tle
 	const satrec = satellite.twoline2satrec(line1, line2);
 	const positionAndVelocity = satellite.propagate(satrec, date);
 	const positionEci = positionAndVelocity.position;

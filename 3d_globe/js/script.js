@@ -12,26 +12,26 @@ const currentState = {
 }
 
 const fetchRandomDebris = async (count) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/${count}`)
+	const res = await fetch(`http://localhost:5000/api/objects/${count}`)
 	const objects = await res.json()
 	return objects
 }
-var DebrisArray = fetchRandomDebris(185);
-var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude,debris.longitude,debris.altitude));
+// var DebrisArray = fetchRandomDebris(185);
+// var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude, debris.longitude, debris.altitude));
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
-	const res = await fetch(`https://emicatronic.com/api/orbit/${catalogNumber}/${date}`)
+	const res = await fetch(`http://localhost:5000/api/orbit/${catalogNumber}/${date}`)
 	const data = await res.json()
 	return data
 }
 
 const autoSuggest = async (query) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/autoSuggest/${query}`)
+	const res = await fetch(`http://localhost:5000/api/objects/autoSuggest/${query}`)
 	const data = await res.json()
 	return data
 }
 
 const search = async (query) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/search/${query}`)
+	const res = await fetch(`http://localhost:5000/api/objects/search/${query}`)
 	const data = await res.json()
 	return data
 }
@@ -113,7 +113,7 @@ const myObjects = [];
 // }
 
 const fetchRandomDebrisCoords = async (objects) => {
-	const res = Promise.all(objects.map(obj => await fetchDebrisData(obj.catalogNumber, new Date())))
+	const res = Promise.all(objects.map(obj => fetchDebrisData(obj.catalogNumber, new Date())))
 	return res
 }
 
@@ -166,14 +166,16 @@ const orbitals = new THREE.Group();
 scene.add(orbitals);
 
 //add debris & rotate it
-function addDebris(lat,long,alt){
-const debris_geometry = new THREE.SphereGeometry(1, 100, 100);
-const debris_material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const debris = new THREE.Mesh(debris_geometry, debris_material);
-debris.position.set(lat,long, alt);
-var debris_angle = 0.00;
-orbitals.add(debris);
+function addDebris(lat, long, alt) {
+	const debris_geometry = new THREE.SphereGeometry(1, 100, 100);
+	const debris_material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+	const debris = new THREE.Mesh(debris_geometry, debris_material);
+	debris.position.set(lat, long, alt);
+	var debris_angle = 0.00;
+	orbitals.add(debris);
 }
+
+
 /* function animate_debris() {
 
 	requestAnimationFrame(animate_debris);
@@ -344,4 +346,13 @@ window.addEventListener('resize', onWindowResize);
 }
 follow_debris(); */
 
-
+(async () => {
+	const debris = await fetchRandomDebris(10)
+	const coords = await fetchRandomDebrisCoords(debris)
+	// coords.forEach(coord => addDebris(coord.latitude, coord.longitude, coord.height))
+	for (const coord of coords) {
+		try {
+			addDebris(coord.latitude, coord.longitude, coord.height)
+		} catch (e) { }
+	}
+})()
