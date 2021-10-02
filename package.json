@@ -15,9 +15,12 @@
     "axios": "^0.22.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "line-by-line": "^0.1.6",
     "minisearch": "^3.1.0",
     "satellite.js": "^4.1.3",
-    "spacetrack": "^2.1.3"
+    "spacetrack": "^2.1.3",
+    "tle": "^3.0.0",
+    "tle-parser": "^1.0.1"
   },
   "devDependencies": {
     "dotenv": "^10.0.0",
