@@ -59,7 +59,7 @@ const setUp = async () => {
 	currentDebris = currentState.selectedDebris[0]
 }
 
-//setUp() 
+/*setUp() 
 
 
 
@@ -111,66 +111,233 @@ const toCheck = []
 for (var i = 0; i < candidates.length; i = i + 1) {
 	candidates[i]
 }
+*/
+import {OrbitControls} from "./OrbitControls.js"
+import {GLTFLoader} from "./GLTFLoader.js"
+import { Object3D, Vector3 } from "./three.module.js";
 
-// stary space
-const loader = new THREE.CubeTextureLoader();
-const space_texture = loader.load([
-	'resources/space_cubemap/stars.png',
-	'resources/space_cubemap/stars.png',
-	'resources/space_cubemap/stars.png',
-	'resources/space_cubemap/stars.png',
-	'resources/space_cubemap/stars.png',
-	'resources/space_cubemap/stars.png',
-]);
-scene.background = space_texture;
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+class BlueMarble {
+
+constructor(withSun,withClouds,withGrid){
+	this.scene.background = this.space_texture;
+	this.renderer.setSize( window.innerWidth, window.innerHeight );
+	document.body.appendChild( this.renderer.domElement );
+	this.controls.zoomSpeed=0.5;
+this.controls.rotateSpeed=0.5;  
+	this.scene.add( this.globe_sphere );
+	this.scene.add( this.amb_light );
+	this.scene.add(this.orbitals);
+	this.scene.add(this.orbits);
+	if (withClouds) this.scene.add( this.cloud_sphere );
+	if(withSun)	{
+		this.light.position.set(5000,0,5000);
+		this.scene.add( this.light );
+		this.sun_animate();		
+			}
+		this.animate();
+		
+	}
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+renderer = new THREE.WebGLRenderer();
+orbitals = new THREE.Group();
+orbits = new THREE.Group();
+addOrbital(object){
+	this.orbitals.add(object);
+}
+addOrbit(object){
+	this.orbits.add(object);
+}
+removeOrbital(object){
+	this.orbitals.remove(object);
+}
+removeOrbit(object){
+	this.orbits.remove(object);
+}
+
+
+
 // generate globe
-const globe_geometry = new THREE.SphereGeometry(20, 100, 100);
-const globe_texture = new THREE.TextureLoader().load('resources/blue_marble/aug.jpg');
-const globe_material = new THREE.MeshStandardMaterial({ map: globe_texture });
-const globe_sphere = new THREE.Mesh(globe_geometry, globe_material);
-scene.add(globe_sphere);
+globe_geometry = new THREE.SphereGeometry( 20, 100, 100 );
+globe_texture = new THREE.TextureLoader().load( 'resources/blue_marble/aug.jpg' );
+globe_material = new THREE.MeshStandardMaterial( { map: this.globe_texture } );
+globe_sphere = new THREE.Mesh( this.globe_geometry, this.globe_material );
 // generate cloud layer
-const cloud_geometry = new THREE.SphereGeometry(20.1, 100, 100);
-const cloud_texture = new THREE.TextureLoader().load('resources/layers/cloud.jpg');
-const cloud_material = new THREE.MeshStandardMaterial({ map: cloud_texture, transparent: true, opacity: 0.2 });
-const cloud_sphere = new THREE.Mesh(cloud_geometry, cloud_material);
-scene.add(cloud_sphere);
+cloud_geometry = new THREE.SphereGeometry( 20.1, 100, 100 );
+cloud_texture = new THREE.TextureLoader().load( 'resources/layers/cloud.jpg' );
+cloud_material = new THREE.MeshStandardMaterial( { map: this.cloud_texture ,transparent:true,opacity:0.2} );
+cloud_sphere = new THREE.Mesh( this.cloud_geometry, this.cloud_material );
+//sun & lights	
+light = new THREE.PointLight( 0xffffff,1.4 , 0 ,2); // sun sim
 
-//lights
-const light = new THREE.PointLight(0xffffff, 1.4, 0, 2); // sun sim
-scene.add(light);
-const amb_light = new THREE.AmbientLight(0xffffff, 0.2); // soft white light
-scene.add(amb_light);
+amb_light = new THREE.AmbientLight( 0xffffff,0.2 ); // soft white light
+// stary space
+loader = new THREE.CubeTextureLoader();
+space_texture = this.loader.load([
+  'resources/space_cubemap/stars.png',
+  'resources/space_cubemap/stars.png',
+  'resources/space_cubemap/stars.png',
+  'resources/space_cubemap/stars.png',
+  'resources/space_cubemap/stars.png',
+  'resources/space_cubemap/stars.png',
+]);
+//camera mouse control and init pos
+controls = new OrbitControls( this.camera, this.renderer.domElement );
 
-//orbitals
-const orbitals = new THREE.Group();
-scene.add(orbitals);
-
-//add debris & rotate it
-function addDebris(lat,long,alt){
-const debris_geometry = new THREE.SphereGeometry(1, 100, 100);
-const debris_material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const debris = new THREE.Mesh(debris_geometry, debris_material);
-debris.position.set(lat,long, alt);
-var debris_angle = 0.00;
-orbitals.add(debris);
+animate = () =>  {
+	requestAnimationFrame( this.animate );
+	this.renderer.render( this.scene, this.camera );
 }
-/* function animate_debris() {
-
-	requestAnimationFrame(animate_debris);
-	debris_angle += Math.PI / 180;
-	debris.position.set(30 * Math.cos(debris_angle), 30 * Math.sin(debris_angle), 0);
-	renderer.render(scene, camera);
+sun_angle = 0;
+sun_animate = () => {
+	requestAnimationFrame( this.sun_animate );
+    this.sun_angle += (2/360)* Math.PI;
+    this.light.position.set( 5000*Math.cos(this.sun_angle), 0, 5000*Math.sin(this.sun_angle) );
 
 }
-animate_debris();*/
 
 
+}
+
+class Orbit extends THREE.Line{
+constructor(res,color){
+	super();
+	this.color=color;
+
+	for (let i=0;i<=res;i++){
+		this.points.push( new THREE.Vector3(40*Math.cos(2*Math.PI*i/res), 40*Math.sin(2*Math.PI*i/res),0) );
+		}
+		this.material = new THREE.LineBasicMaterial({color: color});
+		this.geometry = new THREE.BufferGeometry().setFromPoints( this.points );
+		
+}
+
+points = [];
+
+
+}
+
+class Debris extends THREE.Mesh{
+	constructor(pos,color){
+			super();
+			this.setPosition(modelCoords(pos));
+			this.color=color;
+			this.geometry = new THREE.SphereGeometry( 0.05, 1, 2 );
+			this.material = new THREE.MeshStandardMaterial( { color: this.color } ) ;
+			this.orbit = new Orbit(1000,this.color);			
+		}
+
+setPosition = (vect) => {
+	this.position.set(vect.x,vect.y,vect.z);
+}
+
+}
+
+var myMarble = new BlueMarble(true,true,true);
+myMarble.camera.position.z = 80;
+
+myMarble.addOrbital(new Debris([0.593412,0.10472,6371],0xffff00));
+myMarble.addOrbital(new Debris([0.20943951,-0.139626,6371],0xff0000));
+
+// Tooltip
+let INTERSECTED;
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2().set(100,100);
+const mouse_adapted = new THREE.Vector2().set(100,100);
+function onMouseMove( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+	document.getElementById('tooltip').style.left =mouse.x+2+'px' ;
+	document.getElementById('tooltip').style.top=mouse.y+2+'px' ;
+	mouse.x = event.clientX ;
+	mouse.y = event.clientY;
+	mouse_adapted.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse_adapted.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+
+function render() {
+	requestAnimationFrame(render);
+	
+	// update the picking ray with the camera and mouse position
+	raycaster.setFromCamera( mouse_adapted, myMarble.camera );
+
+	// calculate objects intersecting the picking ray
+	const intersects = raycaster.intersectObjects( myMarble.orbitals.children );
+
+
+	if ( intersects.length > 0 ) {
+
+			
+		// on hover
+		if ( INTERSECTED != intersects[ 0 ].object ) {
+
+			if ( INTERSECTED ) {INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex )
+			myMarble.removeOrbit(INTERSECTED.orbit);}
+			;
+
+			 // highlight
+			INTERSECTED = intersects[0].object;
+			INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+			
+			INTERSECTED.material.emissive.setHex( 0xffff00 );
+			INTERSECTED.material.emissiveIntensity =0.4;
+			// coordinates tooltip
+			document.getElementById('tooltip').innerHTML = "X : "+INTERSECTED.position.x.toString() +"<br> Y : "+INTERSECTED.position.y.toString()+ "<br> Z : "+INTERSECTED.position.z.toString();
+
+			document.getElementById('tooltip').style.display = 'block';		
+			myMarble.addOrbit(INTERSECTED.orbit);
+
+		}
+		else {	
+			document.getElementById('tooltip').innerHTML = "X : "+INTERSECTED.position.x.toString() +"<br> Y : "+INTERSECTED.position.y.toString()+ "<br> Z : "+INTERSECTED.position.z.toString();
+			
+			
+		}
+
+	} 
+				//on leave 
+		else {
+			// highlight
+			if ( INTERSECTED ) {INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+			//coordinates tooltip
+			document.getElementById('tooltip').style.display = 'none';	
+			myMarble.removeOrbit(INTERSECTED.orbit);
+		}
+		INTERSECTED = null;
+
+	}
+
+
+}
+window.addEventListener( 'mousemove', onMouseMove, false );
+
+render();
+
+function onWindowResize() {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+window.addEventListener( 'resize', onWindowResize );
+
+function modelCoords(realCoords){
+	var x,y,z;
+	var prop =  (realCoords[2]/6371)*20;
+	y= Math.sin(realCoords[0]) * prop;
+	var intr = Math.abs(Math.cos(realCoords[0]) * prop);
+	x= intr * Math.cos(realCoords[1]+0.015);
+	z= intr * Math.sin(realCoords[1]+0.015);
+
+return(new THREE.Vector3(x,y,z));
+}
+
+
+/*
 //satellite import
 var my_satellite;
 
@@ -178,148 +345,50 @@ const object_loader = new GLTFLoader();
 
 object_loader.load(
 	'resources/3d_models/satellite/10477_Satellite_v1_L3.glb',
-	function (gltf) {
+	function ( gltf ) {
 
-		console.log('GLTF Loaded');
-		my_satellite = gltf.scene.getObjectByName('10477_Satellite_v1_SG');;
-		function animate_satellite() {
+				console.log('GLTF Loaded');
+				my_satellite = gltf.scene.getObjectByName('10477_Satellite_v1_SG');;
+				function animate_satellite() {
 
-			requestAnimationFrame(animate_satellite);
-			satellite_angle += Math.PI / 180;
-			my_satellite.position.set(25 * Math.cos(satellite_angle), 0, 25 * Math.sin(satellite_angle));
-			renderer.render(scene, camera);
+							requestAnimationFrame( animate_satellite );
+						satellite_angle+= Math.PI/180;
+						my_satellite.position.set( 25*Math.cos(satellite_angle), 0, 25*Math.sin(satellite_angle) );
+							renderer.render( scene, camera );
 
-		}
-		orbitals.add(my_satellite);
-		my_satellite.scale.set(0.001, 0.001, 0.001);
-		my_satellite.position.set(25, 0, 25);
-		//animate_satellite();
-
+				}
+			orbitals.add(my_satellite);
+				my_satellite.scale.set(0.001,0.001,0.001);
+				my_satellite.position.set(25,0,25);
+			//animate_satellite();
+				
 
 	},
 	// called while loading is progressing
-	function (xhr) {
+	function ( xhr ) {
 
-		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
 
 	},
 	// called when loading has errors
-	function (error) {
+	function ( error ) {
 
-		console.log('An error happened');
+		console.log( 'An error happened' );
 
 	}
 );
 
-//orbit generator
-const material = new THREE.LineBasicMaterial({
-	color: 0x0000ff
-});
 
-const points = [];
-const resolution = 10000;
-const a = 30;
-const b = 30;
-for (let i = 0; i <= resolution; i++) {
-	points.push(new THREE.Vector3(a * Math.cos(2 * Math.PI * i / resolution), b * Math.sin(2 * Math.PI * i / resolution), 0));
-}
-
-const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-const line = new THREE.Line(geometry, material);
-scene.add(line);
-
-console.log('afin');
-//camera mouse control and init pos
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.zoomSpeed = 0.5;
-controls.rotateSpeed = 0.5;
-camera.position.z = 50;
+camera.position.z = 80;
 camera.position.y = 0;
 camera.position.x = 0;
-var sun_angle = 0.00;
-var satellite_angle = 0.00;
-
-function animate() {
-
-	requestAnimationFrame(animate);
+var sun_angle =   0.00;
+var satellite_angle =   0.00;
 
 
-	sun_angle += (2 / (60 * 86400)) * Math.PI;
-	light.position.set(5000 * Math.cos(sun_angle), 0, 5000 * Math.sin(sun_angle));
-
-	renderer.render(scene, camera);
-
-}
-animate();
 
 
-// on hover thingz
-let INTERSECTED;
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2().set(100, 100);
-const mouse_adapted = new THREE.Vector2().set(100, 100);
-function onMouseMove(event) {
 
-	// calculate mouse position in normalized device coordinates
-	// (-1 to +1) for both components
-	document.getElementById('tooltip').style.left = mouse.x + 'px';
-	document.getElementById('tooltip').style.top = mouse.y + 'px';
-	mouse.x = event.clientX;
-	mouse.y = event.clientY;
-	mouse_adapted.x = (event.clientX / window.innerWidth) * 2 - 1;
-	mouse_adapted.y = - (event.clientY / window.innerHeight) * 2 + 1;
-}
-
-function render() {
-	requestAnimationFrame(render);
-
-	// update the picking ray with the camera and mouse position
-	raycaster.setFromCamera(mouse_adapted, camera);
-
-	// calculate objects intersecting the picking ray
-	const intersects = raycaster.intersectObjects(orbitals.children);
-
-	if (intersects.length > 0) {
-		// on hover
-		if (INTERSECTED != intersects[0].object) {
-			if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
-			// highlight
-			INTERSECTED = intersects[0].object;
-			INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-			INTERSECTED.material.emissive.setHex(0xffff00);
-			INTERSECTED.material.emissiveIntensity = 0.4;
-			// coordinates tooltip
-			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
-			document.getElementById('tooltip').style.display = 'block';
-		}
-		else {
-			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
-		}
-	}
-	//on leave 
-	else {
-		// highlight
-		if (INTERSECTED) {
-			INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
-			//coordinates tooltip
-			document.getElementById('tooltip').style.display = 'none';
-		}
-		INTERSECTED = null;
-	}
-	renderer.render(scene, camera);
-}
-
-window.addEventListener('mousemove', onMouseMove, false);
-
-render();
-
-function onWindowResize() {
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(window.innerWidth, window.innerHeight);
-}
-window.addEventListener('resize', onWindowResize);
 
 // POV switch
 /* function follow_debris(){
@@ -327,6 +396,7 @@ window.addEventListener('resize', onWindowResize);
 	camera.position.z = my_satellite.position.z;
 	camera.position.x = my_satellite.position.x;
 	camera.position.y = my_satellite.position.y;
+
 }
 follow_debris(); */
 
