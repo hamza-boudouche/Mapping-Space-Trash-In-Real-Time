@@ -7,6 +7,7 @@ const {
 	writeObjectsToCash,
 	getObject,
 	getObjectsRequest,
+	getObjectsRequestExcludes,
 	getOrbitAndInfoRequest,
 	autoSuggest,
 	searchByName,
@@ -29,10 +30,15 @@ const setUp = async (client) => {
 	const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 	await writeObjectsToCash(client, objects);
 	setInterval(async () => {
-		const objects = await getObjects(1000, 25000);
+		const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 		await writeObjectsToCash(client, objects);
-	}, 60 * 60 * 1000)
+	}, 60 * 60 * 1000);
+	// const debris = await getObjectsRequest(redisClient, 20);
+	// console.log(debris)
+	// debris.forEach(deb => console.log(deb.catalogNumber))
 }
+
+
 
 app.use(morgan('dev'))
 app.use(cors(corsOptions));
@@ -49,6 +55,13 @@ app.get('/test', (req, res) => {
 app.get('/api/objects/:count', async (req, res) => {
 	const count = Number(req.params['count'])
 	const result = await getObjectsRequest(redisClient, count)
+	return res.json(result)
+})
+
+app.put('/api/objects/:count', async (req, res) => {
+	const count = Number(req.params['count'])
+	const existing = req.body.existing;
+	const result = await getObjectsRequestExcludes(redisClient, count, existing)
 	return res.json(result)
 })
 

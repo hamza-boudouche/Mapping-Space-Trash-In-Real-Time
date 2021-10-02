@@ -25,11 +25,12 @@ const getObjects = async (limit, offset) => {
 const getTle = async (catalogNumber) => {
 	const response = await axios.get(`https://celestrak.com/NORAD/elements/gp.php?CATNR=${catalogNumber}&FORMAT=2LE`)
 	const body = response.data;
-	console.log(body)
 	if (body === 'No GP data found') {
+		console.log(catalogNumber + ' failed')
 		return -1;
 	}
-	return body.split('\r\n');
+	const res = body.split('\r\n')
+	return [res[0], res[1]];
 }
 
 const getPosAndVel = async (catalogNumber, date) => {

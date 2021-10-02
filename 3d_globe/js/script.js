@@ -16,6 +16,7 @@ const fetchRandomDebris = async (count) => {
 	const objects = await res.json()
 	return objects
 }
+
 // var DebrisArray = fetchRandomDebris(185);
 // var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude, debris.longitude, debris.altitude));
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
@@ -347,12 +348,13 @@ window.addEventListener('resize', onWindowResize);
 follow_debris(); */
 
 (async () => {
-	const debris = await fetchRandomDebris(10)
+	const debris = await fetchRandomDebris(30)
 	const coords = await fetchRandomDebrisCoords(debris)
-	// coords.forEach(coord => addDebris(coord.latitude, coord.longitude, coord.height))
+	coords.forEach(coord => addDebris(coord.latitude, coord.longitude, coord.height))
 	for (const coord of coords) {
 		try {
 			addDebris(coord.latitude, coord.longitude, coord.height)
 		} catch (e) { }
 	}
+
 })()
