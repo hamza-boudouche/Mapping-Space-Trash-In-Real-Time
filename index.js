@@ -87,6 +87,13 @@ app.get('/api/objects/search/:queryString', (req, res) => {
 	return res.json(resultat)
 })
 
+app.get('/api/objects/collisions/:date', (req, res) => {
+	const tracked = req.body.tracked
+	const date = new Date(req.params['date'])
+	const colliding = getColliding(client, tracked, date)
+	res.json(colliding)
+})
+
 app.listen(port, () => {
 	console.log(`Server is listening on port ${port}`)
 })
