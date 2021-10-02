@@ -1,16 +1,220 @@
-body {
-    margin:0;
+@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+
+}
+body{
+  background-color: black;
+  color: #f2f2f2;
+  overflow: hidden;
 }
 
-    #tooltip {
-        position: absolute;
-        top:0px;
-        left:0px;
-        color: #fff;
-        border: 1px solid;
-        background: #000;
-        padding: 5px 10px;
-        font-family: fangsong;
-        font-size: 10px;
-        display:none;
-    }
+#tooltip {
+  position: absolute;
+  top:0px;
+  left:0px;
+  color: #fff;
+  border: 1px solid;
+  background: #000;
+  padding: 5px 10px;
+  font-family: fangsong;
+  font-size: 10px;
+  display:none;
+}
+.wrapper{
+  height: 100%;
+  width: 300px;
+  position: relative;
+  z-index: 3;
+}
+.wrapper .menu-btn {
+  position: absolute;
+  top: 15px;
+  color: #fff;
+  height: 45px;
+  width: 45px;
+  z-index: 9999;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  margin-left: 48px;
+  
+}
+#btn:checked ~ .menu-btn{
+  left: 247px;
+}
+.wrapper .menu-btn i{
+  position: absolute;
+  font-size: 23px;
+  transition: all 0.3s ease;
+}
+.wrapper .menu-btn i.fa-times{
+  opacity: 0;
+}
+#btn:checked ~ .menu-btn i.fa-times{
+  opacity: 1;
+  transform: rotate(360deg);
+  position: fixed;
+}
+#btn:checked ~ .menu-btn i.fa-chevron-right{
+  opacity: 0;
+  transform: rotate(180deg);
+}
+#sidebar{
+  position: fixed;
+  background: #404040;
+  height: 100%;
+  width: 355px;
+  overflow: hidden;
+  left: -355px;
+  transition: all 0.3s ease;
+  z-index:-2;
+}
+#btn:checked ~ #sidebar{
+  left: 0;
+}
+.content{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  color: #202020;
+  z-index: -1;
+  width: 100%;
+  
+}
+.content .header{
+  font-size: 45px;
+  font-weight: 700;
+}
+.content p{
+  font-size: 40px;
+  font-weight: 700;
+}
+.spinner {
+  margin-top: 4vh;
+  border-radius: 10px;
+  font-size: 26px;
+}
+.main{
+  position: fixed;
+  top: 15vh;
+}
+.main-title {
+  left: 70px;
+  padding: 25px 25px;
+  font-size: 55px;
+  font-weight: bolder;
+}
+.main-title img {
+  width:80%;
+}
+.main-desc{
+  padding: 5px 15px; 
+}
+.input-group-text{
+  background-color: transparent;
+  
+}
+.fa-search{
+  color: #000000;
+  margin-left:0px ;
+}
+.input-group.rounded {
+  margin-top: 60px; 
+  width: 90%;
+  float: left;
+  margin-left: 20px;
+}
+.fas.fa-cog{
+  font-weight: 900;
+  color: white;
+  position: fixed;
+  top: 15px;
+  left: 93%;
+  font-size: 30px;
+}
+.fas.fa-info{
+  font-weight: 900;
+  color: white;
+  position: fixed;
+  top: 15px;
+  left: 88%;
+  font-size: 30px;
+}
+.btn{
+  cursor: pointer;
+  color: white;
+}
+.modal-content.bg-dark {
+  border-radius: 25px;
+}
+#Logo-EMICATRONIC{
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  margin-left: 80px;  
+}
+input.form-control.rounded.bg-dark {
+  border-radius: 20px !important;
+  border-color: gray;
+}
+input.btn.btn-default {
+  width: 100%;
+}
+#range-d-nasa{
+  width: 100%;  
+}
+button#dropdownMenuButton.drpd-menu {
+  width: 100%;
+}
+input.btn.btn-default:hover {
+  color: red;
+}
+.search-result{
+  width: 109%;
+  border-bottom: 1px solid white;
+  border-radius: 10px;
+}
+.row-img-info{
+  width: 240px;
+  height: 200px;
+  border: 1px solid white;
+  border-radius: 20px 20px 0 0;
+}
+.debris-info{
+  width: 240px;
+  border: 1px solid white;
+  position: fixed;
+  top: 171px;
+  left: 1180px;
+  border-radius: 20px;
+}
+.table-dark {
+  color: #fff;
+  background-color: #000000;
+}
+#btn:checked ~ .menu-btn {
+  left: 247px;
+  z-index: 3;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+  
