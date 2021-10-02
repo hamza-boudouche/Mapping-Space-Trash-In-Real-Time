@@ -2,7 +2,6 @@ import { OrbitControls } from "./OrbitControls.js"
 import { GLTFLoader } from "./GLTFLoader.js"
 import { Object3D, Vector3 } from "./three.module.js";
 
-const scene = new THREE.Scene();
 
 const initialNum = 10
 const currentState = {
@@ -16,9 +15,16 @@ const fetchRandomDebris = async (count) => {
 	const objects = await res.json()
 	return objects
 }
+var DebrisArray = fetchRandomDebris(50);
 
-// var DebrisArray = fetchRandomDebris(185);
-// var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude, debris.longitude, debris.altitude));
+var DebrisCoords = DebrisArray.map(debris => {
+
+	let coord = fetchDebrisData(debris.catalogNumber,new Date());
+	return({...debris,...coord})
+
+});
+currentState.allDebris = DebrisCoords;
+
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
 	const res = await fetch(`http://localhost:5000/api/orbit/${catalogNumber}/${date}`)
 	const data = await res.json()
@@ -127,9 +133,6 @@ const checkForProbableCollissions = (objectsWithCoords) => {
 	});
 }
 */
-import {OrbitControls} from "./OrbitControls.js"
-import {GLTFLoader} from "./GLTFLoader.js"
-import { Object3D, Vector3 } from "./three.module.js";
 
 
 class BlueMarble {
@@ -251,9 +254,9 @@ setPosition = (vect) => {
 
 var myMarble = new BlueMarble(true,true,true);
 myMarble.camera.position.z = 80;
+currentState.allDebris.forEach(coord => myMarble.addOrbital(new Debris([coord.longitude,coord.lattitude,coord.height],0xffff00));
 
-myMarble.addOrbital(new Debris([0.593412,0.10472,6371],0xffff00));
-myMarble.addOrbital(new Debris([0.20943951,-0.139626,6371],0xff0000));
+
 
 // Tooltip
 let INTERSECTED;
