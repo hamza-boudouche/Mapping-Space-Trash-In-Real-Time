@@ -7,6 +7,7 @@ const {
 	writeObjectsToCash,
 	getObject,
 	getObjectsRequest,
+	getObjectsRequestExcludes,
 	getOrbitAndInfoRequest,
 	autoSuggest,
 	searchByName,
@@ -26,13 +27,18 @@ const redisCredentials = {
 const redisClient = redis.createClient(redisCredentials)
 
 const setUp = async (client) => {
-	const objects = await getObjects(100, undefined);
+	const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 	await writeObjectsToCash(client, objects);
 	setInterval(async () => {
-		const objects = await getObjects(100, undefined);
+		const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 		await writeObjectsToCash(client, objects);
-	}, 60 * 60 * 1000)
+	}, 60 * 60 * 1000);
+	// const debris = await getObjectsRequest(redisClient, 20);
+	// console.log(debris)
+	// debris.forEach(deb => console.log(deb.catalogNumber))
 }
+
+
 
 app.use(morgan('dev'))
 app.use(cors(corsOptions));
@@ -49,18 +55,21 @@ app.get('/test', (req, res) => {
 app.get('/api/objects/:count', async (req, res) => {
 	const count = Number(req.params['count'])
 	const result = await getObjectsRequest(redisClient, count)
-	console.log(result)
+	return res.json(result)
+})
+
+app.put('/api/objects/:count', async (req, res) => {
+	const count = Number(req.params['count'])
+	const existing = req.body.existing;
+	const result = await getObjectsRequestExcludes(redisClient, count, existing)
 	return res.json(result)
 })
 
 app.get('/api/orbit/:catalogNumber/:date', async (req, res) => {
 	const catalogNumber = Number(req.params['catalogNumber'])
 	const date = new Date(req.params['date'])
-	let result = null;
-	try {
-		result = await getOrbitAndInfoRequest(redisClient, catalogNumber, date)
-	} catch (err) {
-		console.log(err)
+	const result = await getOrbitAndInfoRequest(redisClient, catalogNumber, date);
+	if (result === -1) {
 		return res.send('No GP data found')
 	}
 	return res.json(result)
@@ -81,4 +90,3 @@ app.get('/api/objects/search/:queryString', (req, res) => {
 app.listen(port, () => {
 	console.log(`Server is listening on port ${port}`)
 })
-

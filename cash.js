@@ -1,4 +1,3 @@
-const redis = require('async-redis')
 const MiniSearch = require('minisearch')
 const { getPosAndVel } = require('./helpers')
 const catalogNumbers = [];
@@ -8,14 +7,18 @@ let miniSearch = null;
 
 const writeObjectsToCash = async (client, objects) => {
 	// store array of objects in cash based on catalogNumber
-	objects.forEach(async (object) => {
+	const _fn = async (object) => {
 		await client.set(object.catalogNumber, JSON.stringify(object))
 		// store catalog numbers in array for easy access (looping throught objects)
 		catalogNumbers.push(object.catalogNumber)
 		object.id = object.catalogNumber
 		// keeps track of count of objects
 		lnCatalogNumbers++
-	});
+	}
+	for (let i = 0; i < objects.length; i++) {
+		await _fn(objects[i])
+	}
+	console.log(lnCatalogNumbers)
 	objects.forEach((object) => {
 		object.id = object.catalogNumber
 	});
@@ -23,14 +26,10 @@ const writeObjectsToCash = async (client, objects) => {
 	miniSearch = new MiniSearch({
 		fields: ['name', 'intlDesignator', 'catalogNumber'],
 		storeFields: ['name', 'intlDesignator', 'catalogNumber', 'type', 'country']
-		// extractField: (document, fieldName) => {
-		// 	// If field name is 'pubYear', extract just the year from 'pubDate'
-		// 	return fieldName
-		// }
 	})
 	// add all objects in miniSearch 
 	miniSearch.addAll(objects)
-	console.log('done fetching')
+	console.log('done caching')
 }
 
 const getObject = async (client, catalogNumber) => {
@@ -43,31 +42,99 @@ const getObject = async (client, catalogNumber) => {
 }
 
 const getObjectsRequest = async (client, count = 20) => {
+	// idea:
+	// while still doesn't have a full `count` generated objects: 
+	// 		generate random number 
+	//    find out catalogNumber of it
+	//    find out if it has GP data
+	//        if so add it to array to return
+	//        if not skip
+
 	// check if catalogNumbers array is populated
 	if (lnCatalogNumbers === 0) {
-		// if not exit function
 		return
 	}
 	// if so generate array of length:count and that contains random integers between 0 and lnCatalogNumbers 
-	const randomCatalogNumbersIndex = []
-	while (randomCatalogNumbersIndex.length < count) {
-		let r = Math.floor(Math.random() * lnCatalogNumbers);
-		if (randomCatalogNumbersIndex.indexOf(r) === -1) randomCatalogNumbersIndex.push(r);
-	}
-	// retreive objects for which indexes are equal to previous random numbers (stored in cash for better speed and for persisting storage)
-	const objects = Promise.all(randomCatalogNumbersIndex.map(async (r) => {
+	const res = []
+	const prev = []
+	while (res.length < count) {
+		let r = -1
+		do {
+			r = Math.floor(Math.random() * lnCatalogNumbers);
+			if (prev.indexOf(r) != -1) {
+				r = -1;
+			}
+		} while (r == -1);
 		const obj = await getObject(client, catalogNumbers[r])
-		// construct result array (objects doesn't have to contain all available data)
-		const resInt = {
+		const objWithGP = await getOrbitAndInfoRequest(client, obj.catalogNumber, new Date())
+		if (objWithGP !== -1) {
+			res.push(obj)
+			prev.push(r)
+		}
+	}
+	const toReturn = res.map(obj => {
+		const objTrunk = {
 			name: obj.name,
 			intlDesignator: obj.intlDesignator,
 			catalogNumber: obj.catalogNumber,
 			type: obj.type,
 			country: obj.country,
 		}
-		return resInt
-	}))
-	return objects
+		return objTrunk
+	})
+	return toReturn
+	// const randomCatalogNumbersIndex = []
+	// while (randomCatalogNumbersIndex.length < count) {
+	// 	let r = Math.floor(Math.random() * lnCatalogNumbers);
+	// 	if (randomCatalogNumbersIndex.indexOf(r) === -1) randomCatalogNumbersIndex.push(r);
+	// }
+	// // retreive objects for which indexes are equal to previous random numbers (stored in cash for better speed and for persisting storage)
+	// const objects = Promise.all(randomCatalogNumbersIndex.map(async (r) => {
+	// 	const obj = await getObject(client, catalogNumbers[r])
+	// 	// construct result array (objects doesn't have to contain all available data)
+
+	// 	return resInt
+	// }))
+	// return objects
+}
+
+const getObjectsRequestExcludes = async (client, count, existing) => {
+	if (lnCatalogNumbers === 0) {
+		return
+	}
+
+	const res = []
+	const prev = []
+	while (res.length < count) {
+		let r = -1
+		do {
+			r = Math.floor(Math.random() * lnCatalogNumbers);
+			if (prev.indexOf(r) != -1) {
+				r = -1;
+			}
+		} while (r == -1);
+		const obj = await getObject(client, catalogNumbers[r])
+		if (existing.indexOf(obj.catalogNumber) != -1) {
+			prev.push(r)
+			continue
+		}
+		const objWithGP = await getOrbitAndInfoRequest(client, obj.catalogNumber, new Date())
+		if (objWithGP !== -1) {
+			res.push(obj)
+			prev.push(r)
+		}
+	}
+	const toReturn = res.map(obj => {
+		const objTrunk = {
+			name: obj.name,
+			intlDesignator: obj.intlDesignator,
+			catalogNumber: obj.catalogNumber,
+			type: obj.type,
+			country: obj.country,
+		}
+		return objTrunk
+	})
+	return toReturn
 }
 
 const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
@@ -77,9 +144,12 @@ const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
 	if (existing) {
 		return JSON.parse(existing)
 	}
-	// else retreive data from celestrack api
+	// else retreive data from celestrack api (stored in cash)
 	const obj = await getObject(client, catalogNumber)
 	const posAndVel = await getPosAndVel(catalogNumber, date)
+	if (posAndVel === -1) {
+		return -1;
+	}
 	const res = { ...obj, ...posAndVel }
 	await client.set(`tle-${catalogNumber}`, JSON.stringify(res), 'EX', 60 * 60)
 	return res
@@ -101,6 +171,7 @@ module.exports = {
 	writeObjectsToCash,
 	getObject,
 	getObjectsRequest,
+	getObjectsRequestExcludes,
 	getOrbitAndInfoRequest,
 	autoSuggest,
 	searchByName,

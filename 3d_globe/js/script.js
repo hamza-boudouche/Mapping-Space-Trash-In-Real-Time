@@ -12,26 +12,27 @@ const currentState = {
 }
 
 const fetchRandomDebris = async (count) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/${count}`)
+	const res = await fetch(`http://localhost:5000/api/objects/${count}`)
 	const objects = await res.json()
 	return objects
 }
-var DebrisArray = fetchRandomDebris(185);
-var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude,debris.longitude,debris.altitude));
+
+// var DebrisArray = fetchRandomDebris(185);
+// var DebrisCoords = DebrisArray.forEach(debris => addDebris(debris.latitude, debris.longitude, debris.altitude));
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
-	const res = await fetch(`https://emicatronic.com/api/orbit/${catalogNumber}/${date}`)
+	const res = await fetch(`http://localhost:5000/api/orbit/${catalogNumber}/${date}`)
 	const data = await res.json()
 	return data
 }
 
 const autoSuggest = async (query) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/autoSuggest/${query}`)
+	const res = await fetch(`http://localhost:5000/api/objects/autoSuggest/${query}`)
 	const data = await res.json()
 	return data
 }
 
 const search = async (query) => {
-	const res = await fetch(`https://emicatronic.com/api/objects/search/${query}`)
+	const res = await fetch(`http://localhost:5000/api/objects/search/${query}`)
 	const data = await res.json()
 	return data
 }
@@ -72,44 +73,58 @@ const myTree = new Quadtree({
 
 const myObjects = [];
 
-for (var i = 0; i < 200; i = i + 1) {
-	myObjects.push({
-		x: randMinMax(0, 640),
-		y: randMinMax(0, 480),
-		width: randMinMax(10, 20),
-		height: randMinMax(10, 20),
-		vx: randMinMax(-0.5, 0.5),
-		vy: randMinMax(-0.5, 0.5),
-		check: false
+// for (var i = 0; i < 200; i = i + 1) {
+// 	myObjects.push({
+// 		x: randMinMax(0, 640),
+// 		y: randMinMax(0, 480),
+// 		width: randMinMax(10, 20),
+// 		height: randMinMax(10, 20),
+// 		vx: randMinMax(-0.5, 0.5),
+// 		vy: randMinMax(-0.5, 0.5),
+// 		check: false
+// 	});
+// }
+
+// function loop() {
+// 	//remove all objects and subnodes 
+// 	myTree.clear();
+// 	//update myObjects and insert them into the tree again
+// 	for (var i = 0; i < myObjects.length; i = i + 1) {
+// 		myObjects[i].x += myObjects[i].vx;
+// 		myObjects[i].y += myObjects[i].vy;
+// 		myTree.insert(myObjects[i]);
+// 	}
+// 	//call next frame
+// 	requestAnimationFrame(loop);
+// }
+
+// var myCursor = {
+// 	x: mouseX,
+// 	y: mouseY,
+// 	width: 20,
+// 	height: 20
+// };
+
+// var candidates = myTree.retrieve(myCursor);
+
+// const toCheck = []
+
+// for (var i = 0; i < candidates.length; i = i + 1) {
+// 	candidates[i]
+// }
+
+const fetchRandomDebrisCoords = async (objects) => {
+	const res = Promise.all(objects.map(obj => fetchDebrisData(obj.catalogNumber, new Date())))
+	return res
+}
+
+const checkForProbableCollissions = (objectsWithCoords) => {
+	const myTree = new Quadtree({
+		x: 0,
+		y: 0,
+		width: 400,
+		height: 300
 	});
-}
-
-function loop() {
-	//remove all objects and subnodes 
-	myTree.clear();
-	//update myObjects and insert them into the tree again
-	for (var i = 0; i < myObjects.length; i = i + 1) {
-		myObjects[i].x += myObjects[i].vx;
-		myObjects[i].y += myObjects[i].vy;
-		myTree.insert(myObjects[i]);
-	}
-	//call next frame
-	requestAnimationFrame(loop);
-}
-
-var myCursor = {
-	x: mouseX,
-	y: mouseY,
-	width: 20,
-	height: 20
-};
-
-var candidates = myTree.retrieve(myCursor);
-
-const toCheck = []
-
-for (var i = 0; i < candidates.length; i = i + 1) {
-	candidates[i]
 }
 */
 import {OrbitControls} from "./OrbitControls.js"
@@ -400,4 +415,14 @@ var satellite_angle =   0.00;
 }
 follow_debris(); */
 
+(async () => {
+	const debris = await fetchRandomDebris(30)
+	const coords = await fetchRandomDebrisCoords(debris)
+	coords.forEach(coord => addDebris(coord.latitude, coord.longitude, coord.height))
+	for (const coord of coords) {
+		try {
+			addDebris(coord.latitude, coord.longitude, coord.height)
+		} catch (e) { }
+	}
 
+})()
