@@ -176,6 +176,9 @@ class BlueMarble {
 	removeOrbit(object) {
 		this.orbits.remove(object);
 	}
+	clearOrbitals() {
+		this.scene.remove(this.orbitals)
+	}
 
 
 
@@ -262,9 +265,9 @@ class Debris extends THREE.Mesh {
 		super();
 		this.data = data
 		this.color = color;
-		this.geometry = new THREE.SphereGeometry(0.05, 1, 2);
+		this.geometry = new THREE.SphereGeometry(0.25, 1, 2);
 		this.material = new THREE.MeshStandardMaterial({ color: this.color });
-		this.orbit = new Orbit(Number(this.data.apogee),Number( this.data.perigee), this.color);
+		this.orbit = new Orbit(Number(this.data.apogee), Number(this.data.perigee), this.color);
 		this.orbit.rotation.x += Math.PI / 2;
 		//rotation
 
@@ -277,7 +280,19 @@ class Debris extends THREE.Mesh {
 	}
 
 	setPosition = () => {
-		const vect = modelCoords(satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()))
+		requestAnimationFrame(this.setPosition)
+		const positionAndVelocity = satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date())
+		const positionEci = positionAndVelocity.position
+		const gmst = satellite.gstime(new Date());
+		const positionGd = satellite.eciToGeodetic(positionEci, gmst)
+		const coordsGeo = {
+			x: positionGd.longitude,
+			y: positionGd.latitude,
+			z: positionGd.height,
+		}
+		console.log("--")
+		console.log(coordsGeo)
+		const vect = modelCoords(coordsGeo)
 		// console.log('///')
 		// console.log(vect)
 		this.position.set(vect.x, vect.y, vect.z);
@@ -389,14 +404,14 @@ function onWindowResize(event, myMarble) {
 }
 
 function modelCoords(realCoords) {
-	console.log(realCoords);
 	var x, y, z;
 
-	var prop = ((realCoords.position.z + 6371) / 6371) * 20;
-	y = Math.sin(realCoords.position.x) * prop;
-	var intr = Math.abs(Math.cos(realCoords.position.x) * prop);
-	x = intr * Math.cos(realCoords.position.y + 0.015);
-	z = intr * Math.sin(realCoords.position.y + 0.015);
+	var prop = ((realCoords.z + 6371) / 6371) * 20;
+	y = Math.sin(realCoords.x) * prop;
+	// var intr = Math.abs(Math.cos(realCoords.x) * prop);
+	var intr = Math.cos(realCoords.x) * prop;
+	x = intr * Math.cos(realCoords.y + 0.015);
+	z = intr * Math.sin(realCoords.y + 0.015);
 	const res = new THREE.Vector3(x, y, z)
 	return res
 }
@@ -464,8 +479,19 @@ var satellite_angle =   0.00;
 	
 }
 follow_debris(); */
+
+const smallCard = () => {
+	return `<div class="col-4 text-justify">
+						<img src="/images/logo_centered.png" width="100%" alt="debris">
+						<h6>Mohmad Debrisi</h6>
+						<p class="text-muted "> 
+							"3°08'48.65"<br>	2°25'31.55"
+						</p>
+					</div>`
+}
+
 (async () => {
-	currentState.allDebris = await fetchRandomDebris(200);
+	currentState.allDebris = await fetchRandomDebris(500);
 	var myMarble = new BlueMarble(true, true, true);
 	myMarble.globe.position.x = 30;
 	myMarble.camera.position.z = 80;
@@ -478,12 +504,18 @@ follow_debris(); */
 	const mouse_adapted = new THREE.Vector2().set(100, 100);
 
 	currentState.allDebris.forEach(element => {
-		// console.log('---')
-		const deb = new Debris(element, 0xff0000)
+		const deb = new Debris(element, 0xffffff)
 		deb.init();
 		myMarble.addOrbital(deb);
-		// console.log(element)
 	});
+	// setInterval(() => {
+	// 	// myMarble.clearOrbitals()
+	// 	currentState.allDebris.forEach(element => {
+	// 		const deb = new Debris(element, 0xffffff)
+	// 		deb.init();
+	// 		deb.setPosition();
+	// 	});
+	// }, 3)
 	window.addEventListener('mousemove', (event) => onMouseMove(event, mouse, mouse_adapted), false);
 	window.addEventListener('resize', (event) => onWindowResize(event, myMarble));
 	window.addEventListener("click", () => {
