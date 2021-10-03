@@ -1,7 +1,20 @@
 require("dotenv").config();
 const axios = require('axios').default;
 const spacetrack = require('spacetrack');
-const satellite = require('satellite.js');
+const Quadtree = require('@timohausmann/quadtree-js');
+
+const {
+	writeObjectsToCash,
+	getObject,
+	getObjectsRequest,
+	getObjectsRequestExcludes,
+	autoSuggest,
+	searchByName,
+	getPosAndVel,
+	getTleFileAndParse,
+	parseTle,
+	getOrbitAndInfoRequest
+} = require('./cash')
 
 spacetrack.login({
 	username: process.env.SPACE_TRACK_USERNAME,
@@ -33,28 +46,32 @@ const getTle = async (catalogNumber) => {
 	return [res[0], res[1]];
 }
 
-const getPosAndVel = async (catalogNumber, date) => {
-	const tle = await getTle(catalogNumber)
-	if (tle === -1) {
-		return -1;
-	}
-	const [line1, line2] = tle
-	const satrec = satellite.twoline2satrec(line1, line2);
-	const positionAndVelocity = satellite.propagate(satrec, date);
-	const positionEci = positionAndVelocity.position;
-	const velocityEci = positionAndVelocity.velocity;
-	const gmst = satellite.gstime(date);
-	positionGd = satellite.eciToGeodetic(positionEci, gmst);
-	const longitude = positionGd.longitude;
-	const latitude = positionGd.latitude;
-	const height = positionGd.height;
 
-	return {
-		longitude,
-		latitude,
-		height,
-		velocityEci,
+
+const getColliding = (client, tracked, date) => {
+	let myTree = new Quadtree({
+		x: 0,
+		y: 0,
+		width: 15,
+		height: 15
+	}, 4);
+	for (let i = 0; i < tracked; i++) {
+		let obj = {
+			catalogNumber: tracked[i].catalogNumber,
+			x
+		}
+		myTree.insert()
 	}
 }
 
-module.exports = { getPosAndVel, getObjects }
+module.exports = {
+	getPosAndVel,
+	getObjects,
+	getTleFileAndParse,
+	writeObjectsToCash,
+	getObjectsRequest,
+	getObjectsRequestExcludes,
+	getOrbitAndInfoRequest,
+	autoSuggest,
+	searchByName,
+}

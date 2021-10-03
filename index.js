@@ -4,15 +4,16 @@ const cors = require('cors')
 const morgan = require('morgan')
 const redis = require('async-redis')
 const {
+	getPosAndVel,
+	getObjects,
+	getTleFileAndParse,
 	writeObjectsToCash,
-	getObject,
 	getObjectsRequest,
 	getObjectsRequestExcludes,
 	getOrbitAndInfoRequest,
 	autoSuggest,
 	searchByName,
-} = require('./cash')
-const { getPosAndVel, getObjects } = require('./helpers')
+} = require('./helpers')
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -29,6 +30,10 @@ const redisClient = redis.createClient(redisCredentials)
 const setUp = async (client) => {
 	const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 	await writeObjectsToCash(client, objects);
+	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/cosmos-2251-debris.txt')
+	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/iridium-33-debris.txt')
+	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/1999-025.txt')
+
 	setInterval(async () => {
 		const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 		await writeObjectsToCash(client, objects);
@@ -37,8 +42,6 @@ const setUp = async (client) => {
 	// console.log(debris)
 	// debris.forEach(deb => console.log(deb.catalogNumber))
 }
-
-
 
 app.use(morgan('dev'))
 app.use(cors(corsOptions));
@@ -85,6 +88,13 @@ app.get('/api/objects/search/:queryString', (req, res) => {
 	const queryString = req.params['queryString']
 	const resultat = searchByName(queryString)
 	return res.json(resultat)
+})
+
+app.get('/api/objects/collisions/:date', (req, res) => {
+	const tracked = req.body.tracked
+	const date = new Date(req.params['date'])
+	const colliding = getColliding(client, tracked, date)
+	res.json(colliding)
 })
 
 app.listen(port, () => {

@@ -1,5 +1,11 @@
 const MiniSearch = require('minisearch')
-const { getPosAndVel } = require('./helpers')
+const LineByLineReader = require('line-by-line')
+const Readable = require('stream').Readable
+const TLE = require('tle')
+const satellite = require('satellite.js');
+const axios = require('axios').default;
+const parser = require('tle-parser').parser
+
 const catalogNumbers = [];
 let lnCatalogNumbers = 0;
 let miniSearch = null;
@@ -124,17 +130,100 @@ const getObjectsRequestExcludes = async (client, count, existing) => {
 			prev.push(r)
 		}
 	}
-	const toReturn = res.map(obj => {
-		const objTrunk = {
-			name: obj.name,
-			intlDesignator: obj.intlDesignator,
-			catalogNumber: obj.catalogNumber,
-			type: obj.type,
-			country: obj.country,
+	// const toReturn = res.map(obj => {
+	// 	const objTrunk = {
+	// 		name: obj.name,
+	// 		intlDesignator: obj.intlDesignator,
+	// 		catalogNumber: obj.catalogNumber,
+	// 		type: obj.type,
+	// 		country: obj.country,
+	// 	}
+	// 	return objTrunk
+	// })
+	return res
+}
+
+
+
+const autoSuggest = (query) => {
+	// get auto suggestions using miniSearch
+	// fuzzy attribute forgives small typos
+	const res = miniSearch.autoSuggest(`${query}`, { fuzzy: 0.2 })
+	return res
+}
+
+const searchByName = (query) => {
+	const res = miniSearch.search(`${query}`)
+	return res
+}
+
+const getPosAndVel = async (catalogNumber, date) => {
+	const tle = await getTle(catalogNumber)
+	if (tle === -1) {
+		return -1;
+	}
+	return parseTle(tle, date)
+}
+
+const parseTle = ([line1, line2], date) => {
+	const satrec = satellite.twoline2satrec(line1, line2);
+	const positionAndVelocity = satellite.propagate(satrec, date);
+	const positionEci = positionAndVelocity.position;
+	const velocityEci = positionAndVelocity.velocity;
+	const gmst = satellite.gstime(date);
+	positionGd = satellite.eciToGeodetic(positionEci, gmst);
+	const longitude = positionGd.longitude;
+	const latitude = positionGd.latitude;
+	const height = positionGd.height;
+
+	return {
+		longitude,
+		latitude,
+		height,
+		velocityEci,
+	}
+}
+
+const getTleFileAndParse = async (client, link) => {
+	let response = await axios.get(link)
+	let s = new Readable()
+	s.push(response.data)
+	s.push(null)
+
+	let lr = new LineByLineReader(s);
+	let [line1, line2, line3] = ['', '', '']
+	lr.on('line', async (line) => {
+		// pause emitting of lines...
+		// console.log(line)
+		lr.pause();
+		// ...do your asynchronous line processing..
+		if (line1 == '') {
+			line1 = line
+			console.log(line)
+			console.log(' --------- assigned to 1')
+		} else if (line2 == '') {
+			line2 = line
+			console.log(line)
+			console.log(' --------- assigned to 2')
+		} else if (line3 == '') {
+			line3 = line
+			console.log(line)
+			console.log(' --------- assigned to 3')
+			const posAndVel = parseTle(line2, line3)
+			// else retreive data from celestrack api (stored in cash)
+			// const catalogNumber = TLE.parse(`${line1}\r\n${line2}\r\n${line3}`).number
+			const tle = `${line1}\n${line2}\n${line3}`
+			console.log(tle)
+			const catalogNumber = parser(tle).catalog_number
+			const obj = await getObject(client, catalogNumber)
+			const res = { ...obj, ...posAndVel }
+			await client.set(`tle-${catalogNumber}`, JSON.stringify(res), 'EX', 60 * 60)
+			line1 = ''
+			line2 = ''
+			line3 = ''
 		}
-		return objTrunk
+		lr.resume();
 	})
-	return toReturn
 }
 
 const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
@@ -155,24 +244,15 @@ const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
 	return res
 }
 
-const autoSuggest = (query) => {
-	// get auto suggestions using miniSearch
-	// fuzzy attribute forgives small typos
-	const res = miniSearch.autoSuggest(`${query}`, { fuzzy: 0.2 })
-	return res
-}
-
-const searchByName = (query) => {
-	const res = miniSearch.search(`${query}`)
-	return res
-}
-
 module.exports = {
 	writeObjectsToCash,
 	getObject,
+	getOrbitAndInfoRequest,
 	getObjectsRequest,
 	getObjectsRequestExcludes,
-	getOrbitAndInfoRequest,
 	autoSuggest,
 	searchByName,
+	getPosAndVel,
+	getTleFileAndParse,
+	parseTle
 }
