@@ -2,12 +2,12 @@ import { OrbitControls } from "./OrbitControls.js"
 import { GLTFLoader } from "./GLTFLoader.js"
 import { Object3D, Vector3 } from "./three.module.js";
 
-
 const initialNum = 10
 const currentState = {
 	allDebris: [],
 	selectedDebris: null, // last clicked on debris
 	searchedDebris: [],
+	suggestions:[],
 }
 
 const fetchRandomDebris = async (count) => {
@@ -233,13 +233,18 @@ class BlueMarble {
 	}
 	
 	class Orbit extends THREE.Line{
-	constructor(res,color){
+	constructor(apo,per,color){
 		super();
 		this.color=color;
-	
-		for (let i=0;i<=res;i++){
-			this.points.push( new THREE.Vector3(40*Math.cos(2*Math.PI*i/res), 40*Math.sin(2*Math.PI*i/res),0) );
-			}
+		this.curve = new THREE.EllipseCurve(
+			10*((apo+6371)-(per+6371))/6371,  0,            // ax, aY
+			10*((apo+6371)+(per+6371))/6371,Math.sqrt((apo+6371)*(per+6371))*20/6371 ,              // xRadius, yRadius
+			0,  2 * Math.PI,  // aStartAngle, aEndAngle
+			false,            // aClockwise
+			0                 // aRotation
+		);
+		this.points = this.curve.getPoints( 1000 );
+		
 			this.material = new THREE.LineBasicMaterial({color: color});
 			this.geometry = new THREE.BufferGeometry().setFromPoints( this.points );
 			
@@ -251,14 +256,19 @@ class BlueMarble {
 	}
 	
 	class Debris extends THREE.Mesh{
-		constructor(pos,color){
+		constructor(data,color){
 				super();
-				this.setPosition(modelCoords(pos));
+				this.setPosition(modelCoords(satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date())).position);
+				this.velocity.array = satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()).velocity;
+				this.velocity = Math.sqrt(this.velocity.x**2 + this.velocity.y**2 + this.velocity.z**2);
 				this.color=color;
-				this.geometry = new THREE.SphereGeometry( 0.05, 1, 2 );
+				this.data = data;
+				this.geometry = new THREE.SphereGeometry( 5, 1, 2 );
 				this.material = new THREE.MeshStandardMaterial( { color: this.color } ) ;
-				this.orbit = new Orbit(1000,this.color);	
-				this.scale.set(10,10,10);		
+				this.orbit = new Orbit(this.data.apogee,this.data.perigee,this.color);	
+				this.orbit.rotation.x += Math.PI/2;
+				//rotation
+						
 			}
 	
 	setPosition = (vect) => {
@@ -266,12 +276,19 @@ class BlueMarble {
 	}
 	
 	}
-	
+	function calc(apo,per){
+		console.log(10*((apo+6371)+(per+6371))/6371);console.log(Math.sqrt((apo+6371)*(per+6371))*20/6371 )
+	}
+	calc(10051,5);
 	var myMarble = new BlueMarble(true,true,true);
 	myMarble.globe.position.x = 30;
 	myMarble.camera.position.z = 80;
+
+	currentState.allDebris.forEach(element => {
+		myMarble.addOrbital(new Debris(element,0xff0000));
+	});
 	
-	myMarble.addOrbital(new Debris([0.593412,0.10472,6371],0xffff00));
+
 	
 	
 	// Tooltip
@@ -347,17 +364,35 @@ class BlueMarble {
 	
 	}
 	window.addEventListener( 'mousemove', onMouseMove, false );
+	
+	function updateBox(debris){
+		 
+		 document.getElementById('debris_name').innerHTML=debris.data.name +" "+debris.data.intlDesignator;
+		 document.getElementById('debris_lDate').innerHTML=debris.data[0];
+		 document.getElementById('debris_country').innerHTML=debris.data.country;
+		 document.getElementById('debris_longitude').innerHTML=debris.position[0];
+		 document.getElementById('debris_latitude').innerHTML=debris.position[1];
+		 document.getElementById('debris_altitude').innerHTML=debris.position[2];
+		 document.getElementById('debris_velocity').innerHTML=debris.velocity;
+			
+
+	}
+
 	window.addEventListener("click",() =>{
 		if (INTERSECTED) {
 			if (ACTIVE && ACTIVE != INTERSECTED) {ACTIVE.selected = false;myMarble.removeOrbit(ACTIVE.orbit);}
+			document.getElementById('debris-info').style.display = 'block';
 			ACTIVE = INTERSECTED;
 			console.log(ACTIVE.color);
-					INTERSECTED.selected = true;
+					ACTIVE.selected = true;
+					updateBox(ACTIVE);
 				}
 		}
 	 );
 	
 	render();
+	//getElementById('').addEventListener( 'onchange', funct1, false );
+	//getElementById('').addEventListener( 'onchange', funct1, false );
 	
 	function onWindowResize() {
 	
@@ -456,3 +491,7 @@ class BlueMarble {
 	
 	}
 	follow_debris(); */
+	(async () => {
+		currentState.allDebris = await fetchRandomDebris(2000);
+		
+	})
