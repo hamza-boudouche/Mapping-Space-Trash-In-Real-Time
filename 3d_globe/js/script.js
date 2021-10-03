@@ -146,6 +146,7 @@ class BlueMarble {
 		this.controls.zoomSpeed = 0.5;
 		this.controls.rotateSpeed = 0.5;
 		this.globe.add(this.globe_sphere);
+		this.globe.add(this.morocco_sphere);
 		this.scene.add(this.amb_light);
 		this.scene.add(this.orbits);
 		if (withClouds) this.globe.add(this.cloud_sphere);
@@ -192,6 +193,10 @@ class BlueMarble {
 	cloud_texture = new THREE.TextureLoader().load('resources/layers/cloud.jpg');
 	cloud_material = new THREE.MeshStandardMaterial({ map: this.cloud_texture, transparent: true, opacity: 0.2 });
 	cloud_sphere = new THREE.Mesh(this.cloud_geometry, this.cloud_material);
+	morocco_geometry = new THREE.SphereGeometry(20.1, 100, 100);
+	morocco_texture = new THREE.TextureLoader().load('resources/layers/morocco_layer.png');
+	morocco_material = new THREE.MeshStandardMaterial({ map: this.morocco_texture, transparent: true, opacity: 0.8 });
+	morocco_sphere = new THREE.Mesh(this.morocco_geometry, this.morocco_material);
 	//sun & lights	
 	light = new THREE.PointLight(0xffffff, 1.4, 0, 2); // sun sim
 
@@ -496,7 +501,9 @@ const smallCard = () => {
 	myMarble.globe.position.x = 30;
 	myMarble.camera.position.z = 80;
 
-
+	var myMarble = new BlueMarble(true, true, true);
+	myMarble.globe.position.x = 30;
+	myMarble.camera.position.z = 80;
 	// Tooltip
 	let INTERSECTED, ACTIVE;
 	const raycaster = new THREE.Raycaster();
@@ -544,4 +551,4 @@ const smallCard = () => {
 		}
 	);
 	render(raycaster, mouse_adapted, myMarble, INTERSECTED);
-})()
+})();
