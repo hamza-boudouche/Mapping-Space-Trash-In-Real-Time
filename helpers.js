@@ -35,7 +35,7 @@ const getObjects = async (limit, offset) => {
 	return res;
 }
 
-const getColliding = (client, tracked, date) => {
+const getColliding = (client, tracked, date, longitude, latitude) => {
 	let myTree = new Quadtree({
 		x: 0,
 		y: 0,
@@ -52,6 +52,15 @@ const getColliding = (client, tracked, date) => {
 		}
 		myTree.insert(obj)
 	}
+	const myCursor = {
+		x: longitude - 20,
+		y: latitude + 40,
+		width: 20,
+		height: 20
+	}
+
+	const candidates = myTree.retrieve(myCursor);
+	return candidates.map(candidate => candidate.catalogNumber)
 }
 
 module.exports = {
