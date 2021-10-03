@@ -262,9 +262,9 @@ class Debris extends THREE.Mesh {
 		super();
 		this.data = data
 		this.color = color;
-		this.geometry = new THREE.SphereGeometry(5, 1, 2);
+		this.geometry = new THREE.SphereGeometry(0.05, 1, 2);
 		this.material = new THREE.MeshStandardMaterial({ color: this.color });
-		this.orbit = new Orbit(this.data.apogee, this.data.perigee, this.color);
+		this.orbit = new Orbit(Number(this.data.apogee),Number( this.data.perigee), this.color);
 		this.orbit.rotation.x += Math.PI / 2;
 		//rotation
 
@@ -332,14 +332,14 @@ function render(raycaster, mouse_adapted, myMarble, INTERSECTED) {
 			INTERSECTED.material.emissive.setHex(0xffff00);
 			INTERSECTED.material.emissiveIntensity = 0.4;
 			// coordinates tooltip
-			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
+			document.getElementById('tooltip').innerHTML = INTERSECTED.data.name + " " + INTERSECTED.data.intlDesignator;
 
 			document.getElementById('tooltip').style.display = 'block';
 			myMarble.addOrbit(INTERSECTED.orbit);
 
 		}
 		else {
-			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
+			document.getElementById('tooltip').innerHTML = INTERSECTED.data.name + " " + INTERSECTED.data.intlDesignator;
 			document.body.style.cursor = "pointer";
 		}
 
