@@ -1462,7 +1462,7 @@
              }
  
              canvas = _canvas;
- 
+             
          }
  
          if ( canvas.width > 2048 || canvas.height > 2048 ) {
