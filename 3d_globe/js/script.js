@@ -11,8 +11,10 @@ const currentState = {
 }
 
 const fetchRandomDebris = async (count) => {
-	const res = await fetch(`http://localhost:5000/api/objects/${count}`)
+	console.log('fetching ...')
+	const res = await fetch(`http://localhost:5001/api/objects/${count}`)
 	const objects = await res.json()
+	console.log('done')
 	return objects
 }
 /* var DebrisArray = fetchRandomDebris(50);
@@ -26,19 +28,19 @@ var DebrisCoords = DebrisArray.map(debris => {
 currentState.allDebris = DebrisCoords;*/
 
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
-	const res = await fetch(`http://localhost:5000/api/orbit/${catalogNumber}/${date}`)
+	const res = await fetch(`http://localhost:5001/api/orbit/${catalogNumber}/${date}`)
 	const data = await res.json()
 	return data
 }
 
 const autoSuggest = async (query) => {
-	const res = await fetch(`http://localhost:5000/api/objects/autoSuggest/${query}`)
+	const res = await fetch(`http://localhost:5001/api/objects/autoSuggest/${query}`)
 	const data = await res.json()
 	return data
 }
 
 const search = async (query) => {
-	const res = await fetch(`http://localhost:5000/api/objects/search/${query}`)
+	const res = await fetch(`http://localhost:5001/api/objects/search/${query}`)
 	const data = await res.json()
 	return data
 }
@@ -258,11 +260,8 @@ class Orbit extends THREE.Line {
 class Debris extends THREE.Mesh {
 	constructor(data, color) {
 		super();
-		this.setPosition(modelCoords(satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date())).position);
-		this.velocity.array = satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()).velocity;
-		this.velocity = Math.sqrt(this.velocity.x * 2 + this.velocity.y2 + this.velocity.z * 2);
+		this.data = data
 		this.color = color;
-		this.data = data;
 		this.geometry = new THREE.SphereGeometry(5, 1, 2);
 		this.material = new THREE.MeshStandardMaterial({ color: this.color });
 		this.orbit = new Orbit(this.data.apogee, this.data.perigee, this.color);
@@ -271,32 +270,28 @@ class Debris extends THREE.Mesh {
 
 	}
 
-	setPosition = (vect) => {
+	init = () => {
+		this.setPosition();
+		this.velocity = satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()).velocity;
+		this.velocity = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2 + this.velocity.z ** 2);
+	}
+
+	setPosition = () => {
+		const vect = modelCoords(satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()))
+		// console.log('///')
+		// console.log(vect)
 		this.position.set(vect.x, vect.y, vect.z);
 	}
 
 }
-function calc(apo, per) {
-	console.log(10 * ((apo + 6371) + (per + 6371)) / 6371); console.log(Math.sqrt((apo + 6371) * (per + 6371)) * 20 / 6371)
-}
-calc(10051, 5);
-var myMarble = new BlueMarble(true, true, true);
-myMarble.globe.position.x = 30;
-myMarble.camera.position.z = 80;
 
-currentState.allDebris.forEach(element => {
-	myMarble.addOrbital(new Debris(element, 0xff0000));
-});
+// function calc(apo, per) {
+// 	console.log(10 * ((apo + 6371) + (per + 6371)) / 6371); console.log(Math.sqrt((apo + 6371) * (per + 6371)) * 20 / 6371)
+// }
+// calc(10051, 5);
 
 
-
-
-// Tooltip
-let INTERSECTED, ACTIVE;
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2().set(100, 100);
-const mouse_adapted = new THREE.Vector2().set(100, 100);
-function onMouseMove(event) {
+function onMouseMove(event, mouse, mouse_adapted) {
 
 	// calculate mouse position in normalized device coordinates
 	// (-1 to +1) for both components
@@ -308,8 +303,8 @@ function onMouseMove(event) {
 	mouse_adapted.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
-function render() {
-	requestAnimationFrame(render);
+function render(raycaster, mouse_adapted, myMarble, INTERSECTED) {
+	requestAnimationFrame(() => render(raycaster, mouse_adapted, myMarble, INTERSECTED));
 
 	// update the picking ray with the camera and mouse position
 	raycaster.setFromCamera(mouse_adapted, myMarble.camera);
@@ -365,7 +360,6 @@ function render() {
 
 
 }
-window.addEventListener('mousemove', onMouseMove, false);
 
 function updateBox(debris) {
 
@@ -380,57 +374,34 @@ function updateBox(debris) {
 
 }
 
-window.addEventListener("click", () => {
-	if (INTERSECTED) {
-		if (ACTIVE && ACTIVE != INTERSECTED) { ACTIVE.selected = false; myMarble.removeOrbit(ACTIVE.orbit); }
-		document.getElementById('debris-info').style.display = 'block';
-		ACTIVE = INTERSECTED;
-		console.log(ACTIVE.color);
-		ACTIVE.selected = true;
-		updateBox(ACTIVE);
-	}
-}
-);
 
-render();
+
+
 //getElementById('').addEventListener( 'onchange', funct1, false );
 //getElementById('').addEventListener( 'onchange', funct1, false );
 
-function onWindowResize() {
-
+function onWindowResize(event, myMarble) {
 	myMarble.camera.aspect = window.innerWidth / window.innerHeight;
 	myMarble.camera.updateProjectionMatrix();
 
 	myMarble.renderer.setSize(window.innerWidth, window.innerHeight);
 
 }
-window.addEventListener('resize', onWindowResize);
 
 function modelCoords(realCoords) {
+	console.log(realCoords);
 	var x, y, z;
-	var prop = ((realCoords[2] + 6371) / 6371) * 20;
-	y = Math.sin(realCoords[0]) * prop;
-	var intr = Math.abs(Math.cos(realCoords[0]) * prop);
-	x = intr * Math.cos(realCoords[1] + 0.015);
-	z = intr * Math.sin(realCoords[1] + 0.015);
 
-	return (new THREE.Vector3(x, y, z));
+	var prop = ((realCoords.position.z + 6371) / 6371) * 20;
+	y = Math.sin(realCoords.position.x) * prop;
+	var intr = Math.abs(Math.cos(realCoords.position.x) * prop);
+	x = intr * Math.cos(realCoords.position.y + 0.015);
+	z = intr * Math.sin(realCoords.position.y + 0.015);
+	const res = new THREE.Vector3(x, y, z)
+	return res
 }
 
-$(document).ready(
-	function () {
-		$('.spinner').click(
-			function () {
-				$('.main').animate({
-					left: '-1500px',
-					opacity: '0',
-				}, 2000);
-				$('#menu-btn').show(2000);
-				myMarble.entrance();
-			}
-		);
-	}
-);
+
 /*
 //satellite import
 var my_satellite;
@@ -494,6 +465,51 @@ var satellite_angle =   0.00;
 }
 follow_debris(); */
 (async () => {
-	currentState.allDebris = await fetchRandomDebris(2000);
+	currentState.allDebris = await fetchRandomDebris(200);
+	var myMarble = new BlueMarble(true, true, true);
+	myMarble.globe.position.x = 30;
+	myMarble.camera.position.z = 80;
 
-})
+
+	// Tooltip
+	let INTERSECTED, ACTIVE;
+	const raycaster = new THREE.Raycaster();
+	const mouse = new THREE.Vector2().set(100, 100);
+	const mouse_adapted = new THREE.Vector2().set(100, 100);
+
+	currentState.allDebris.forEach(element => {
+		// console.log('---')
+		const deb = new Debris(element, 0xff0000)
+		deb.init();
+		myMarble.addOrbital(deb);
+		// console.log(element)
+	});
+	window.addEventListener('mousemove', (event) => onMouseMove(event, mouse, mouse_adapted), false);
+	window.addEventListener('resize', (event) => onWindowResize(event, myMarble));
+	window.addEventListener("click", () => {
+		if (INTERSECTED) {
+			if (ACTIVE && ACTIVE != INTERSECTED) { ACTIVE.selected = false; myMarble.removeOrbit(ACTIVE.orbit); }
+			document.getElementById('debris-info').style.display = 'block';
+			ACTIVE = INTERSECTED;
+			console.log(ACTIVE.color);
+			ACTIVE.selected = true;
+			updateBox(ACTIVE);
+		}
+	}
+	);
+	$(document).ready(
+		function () {
+			$('.spinner').click(
+				function () {
+					$('.main').animate({
+						left: '-1500px',
+						opacity: '0',
+					}, 2000);
+					$('#menu-btn').show(2000);
+					myMarble.entrance();
+				}
+			);
+		}
+	);
+	render(raycaster, mouse_adapted, myMarble, INTERSECTED);
+})()
