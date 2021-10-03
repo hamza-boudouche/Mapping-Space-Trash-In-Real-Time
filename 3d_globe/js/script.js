@@ -1,19 +1,20 @@
-import { OrbitControls } from "./OrbitControls.js";
-import { GLTFLoader } from "./GLTFLoader.js";
+import { OrbitControls } from "./OrbitControls.js"
+import { GLTFLoader } from "./GLTFLoader.js"
 import { Object3D, Vector3 } from "./three.module.js";
 
-const initialNum = 10;
+const initialNum = 10
 const currentState = {
 	allDebris: [],
 	selectedDebris: null, // last clicked on debris
 	searchedDebris: [],
-};
+	suggestions: [],
+}
 
 const fetchRandomDebris = async (count) => {
-	const res = await fetch(`http://localhost:5000/api/objects/${count}`);
-	const objects = await res.json();
-	return objects;
-};
+	const res = await fetch(`http://localhost:5000/api/objects/${count}`)
+	const objects = await res.json()
+	return objects
+}
 /* var DebrisArray = fetchRandomDebris(50);
 
 var DebrisCoords = DebrisArray.map(debris => {
@@ -25,49 +26,45 @@ var DebrisCoords = DebrisArray.map(debris => {
 currentState.allDebris = DebrisCoords;*/
 
 const fetchDebrisData = async (catalogNumber, date = new Date()) => {
-	const res = await fetch(
-		`http://localhost:5000/api/orbit/${catalogNumber}/${date}`
-	);
-	const data = await res.json();
-	return data;
-};
+	const res = await fetch(`http://localhost:5000/api/orbit/${catalogNumber}/${date}`)
+	const data = await res.json()
+	return data
+}
 
 const autoSuggest = async (query) => {
-	const res = await fetch(
-		`http://localhost:5000/api/objects/autoSuggest/${query}`
-	);
-	const data = await res.json();
-	return data;
-};
+	const res = await fetch(`http://localhost:5000/api/objects/autoSuggest/${query}`)
+	const data = await res.json()
+	return data
+}
 
 const search = async (query) => {
-	const res = await fetch(`http://localhost:5000/api/objects/search/${query}`);
-	const data = await res.json();
-	return data;
-};
+	const res = await fetch(`http://localhost:5000/api/objects/search/${query}`)
+	const data = await res.json()
+	return data
+}
 
 const renderInfo = () => {
-	// get html elements by id
+	// get html elements by id 
 	// render info
-};
+}
 
 const onSubmitSearch = (e) => {
-	e.preventDefault();
-	const searchQuery = document.getElementById("searchField");
-	const debris = search(searchQuery);
-	currentState.searchedDebris = debris;
-};
+	e.preventDefault()
+	const searchQuery = document.getElementById('searchField')
+	const debris = search(searchQuery)
+	currentState.searchedDebris = debris
+}
 
 const onChangeSearch = (e) => {
-	const searchQuery = document.getElementById("searchField");
-	const debris = autoSuggest(searchQuery);
-	currentState.searchedDebris = debris;
-};
+	const searchQuery = document.getElementById('searchField')
+	const debris = autoSuggest(searchQuery)
+	currentState.searchedDebris = debris
+}
 
 const setUp = async () => {
-	currentState.selectedDebris = await fetchRandomDebris(initialNum);
-	currentDebris = currentState.selectedDebris[0];
-};
+	currentState.selectedDebris = await fetchRandomDebris(initialNum)
+	currentDebris = currentState.selectedDebris[0]
+}
 
 /*setUp() 
 
@@ -137,7 +134,9 @@ const checkForProbableCollissions = (objectsWithCoords) => {
 }
 */
 
+
 class BlueMarble {
+
 	constructor(withSun, withClouds, withGrid) {
 		//this.scene.background = this.space_texture;
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -151,18 +150,14 @@ class BlueMarble {
 		if (withSun) {
 			this.light.position.set(5000, 0, 5000);
 			this.scene.add(this.light);
+
 		}
 		this.scene.add(this.globe);
 		this.animate();
 	}
 	selected = false;
 	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera(
-		45,
-		window.innerWidth / window.innerHeight,
-		0.1,
-		1000
-	);
+	camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 	renderer = new THREE.WebGLRenderer();
 	globe = new THREE.Group();
 	orbitals = new THREE.Group();
@@ -180,23 +175,19 @@ class BlueMarble {
 		this.orbits.remove(object);
 	}
 
+
+
 	// generate globe
 	globe_geometry = new THREE.SphereGeometry(20, 100, 100);
-	globe_texture = new THREE.TextureLoader().load(
-		"resources/blue_marble/aug.jpg"
-	);
+	globe_texture = new THREE.TextureLoader().load('resources/blue_marble/aug.jpg');
 	globe_material = new THREE.MeshStandardMaterial({ map: this.globe_texture });
 	globe_sphere = new THREE.Mesh(this.globe_geometry, this.globe_material);
 	// generate cloud layer
 	cloud_geometry = new THREE.SphereGeometry(20.1, 100, 100);
-	cloud_texture = new THREE.TextureLoader().load("resources/layers/cloud.jpg");
-	cloud_material = new THREE.MeshStandardMaterial({
-		map: this.cloud_texture,
-		transparent: true,
-		opacity: 0.2,
-	});
+	cloud_texture = new THREE.TextureLoader().load('resources/layers/cloud.jpg');
+	cloud_material = new THREE.MeshStandardMaterial({ map: this.cloud_texture, transparent: true, opacity: 0.2 });
 	cloud_sphere = new THREE.Mesh(this.cloud_geometry, this.cloud_material);
-	//sun & lights
+	//sun & lights	
 	light = new THREE.PointLight(0xffffff, 1.4, 0, 2); // sun sim
 
 	amb_light = new THREE.AmbientLight(0xffffff, 0.2); // soft white light
@@ -216,75 +207,89 @@ class BlueMarble {
 	animate = () => {
 		requestAnimationFrame(this.animate);
 		this.renderer.render(this.scene, this.camera);
-	};
+	}
 	sun_angle = 0;
 	sun_animate = () => {
 		requestAnimationFrame(this.sun_animate);
 		this.sun_angle += (2 / 360) * Math.PI;
-		this.light.position.set(
-			5000 * Math.cos(this.sun_angle),
-			0,
-			5000 * Math.sin(this.sun_angle)
-		);
-	};
+		this.light.position.set(5000 * Math.cos(this.sun_angle), 0, 5000 * Math.sin(this.sun_angle));
+
+	}
 
 	earthRot = () => {
 		requestAnimationFrame(this.earthRot);
 		this.globe.rotation.y += 0.01;
-	};
+
+
+	}
 	entrance = () => {
 		requestAnimationFrame(this.entrance);
 
-		if (this.globe.position.x > 0) {
-			this.globe.position.x -= 0.25;
-			this.camera.position.z += 0.1;
-			this.globe.rotation.y += 0.04;
-		} else this.scene.add(this.orbitals);
-	};
+		if (this.globe.position.x > 0) { this.globe.position.x -= 0.25; this.camera.position.z += 0.1; this.globe.rotation.y += 0.04; }
+		else (this.scene.add(this.orbitals))
+
+	}
+
 }
 
 class Orbit extends THREE.Line {
-	constructor(res, color) {
+	constructor(apo, per, color) {
 		super();
 		this.color = color;
+		this.curve = new THREE.EllipseCurve(
+			10 * ((apo + 6371) - (per + 6371)) / 6371, 0,            // ax, aY
+			10 * ((apo + 6371) + (per + 6371)) / 6371, Math.sqrt((apo + 6371) * (per + 6371)) * 20 / 6371,              // xRadius, yRadius
+			0, 2 * Math.PI,  // aStartAngle, aEndAngle
+			false,            // aClockwise
+			0                 // aRotation
+		);
+		this.points = this.curve.getPoints(1000);
 
-		for (let i = 0; i <= res; i++) {
-			this.points.push(
-				new THREE.Vector3(
-					40 * Math.cos((2 * Math.PI * i) / res),
-					40 * Math.sin((2 * Math.PI * i) / res),
-					0
-				)
-			);
-		}
 		this.material = new THREE.LineBasicMaterial({ color: color });
 		this.geometry = new THREE.BufferGeometry().setFromPoints(this.points);
+
 	}
 
 	points = [];
+
+
 }
 
 class Debris extends THREE.Mesh {
-	constructor(pos, color) {
+	constructor(data, color) {
 		super();
-		this.setPosition(modelCoords(pos));
+		this.setPosition(modelCoords(satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date())).position);
+		this.velocity.array = satellite.propagate(satellite.twoline2satrec(this.data.firstLine, this.data.secondLine), new Date()).velocity;
+		this.velocity = Math.sqrt(this.velocity.x * 2 + this.velocity.y2 + this.velocity.z * 2);
 		this.color = color;
-		this.geometry = new THREE.SphereGeometry(0.05, 1, 2);
+		this.data = data;
+		this.geometry = new THREE.SphereGeometry(5, 1, 2);
 		this.material = new THREE.MeshStandardMaterial({ color: this.color });
-		this.orbit = new Orbit(1000, this.color);
-		this.scale.set(10, 10, 10);
+		this.orbit = new Orbit(this.data.apogee, this.data.perigee, this.color);
+		this.orbit.rotation.x += Math.PI / 2;
+		//rotation
+
 	}
 
 	setPosition = (vect) => {
 		this.position.set(vect.x, vect.y, vect.z);
-	};
-}
+	}
 
+}
+function calc(apo, per) {
+	console.log(10 * ((apo + 6371) + (per + 6371)) / 6371); console.log(Math.sqrt((apo + 6371) * (per + 6371)) * 20 / 6371)
+}
+calc(10051, 5);
 var myMarble = new BlueMarble(true, true, true);
 myMarble.globe.position.x = 30;
 myMarble.camera.position.z = 80;
 
-myMarble.addOrbital(new Debris([0.593412, 0.10472, 6371], 0xffff00));
+currentState.allDebris.forEach(element => {
+	myMarble.addOrbital(new Debris(element, 0xff0000));
+});
+
+
+
 
 // Tooltip
 let INTERSECTED, ACTIVE;
@@ -292,14 +297,15 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2().set(100, 100);
 const mouse_adapted = new THREE.Vector2().set(100, 100);
 function onMouseMove(event) {
+
 	// calculate mouse position in normalized device coordinates
 	// (-1 to +1) for both components
-	document.getElementById("tooltip").style.left = mouse.x + 2 + "px";
-	document.getElementById("tooltip").style.top = mouse.y + 2 + "px";
+	document.getElementById('tooltip').style.left = mouse.x + 2 + 'px';
+	document.getElementById('tooltip').style.top = mouse.y + 2 + 'px';
 	mouse.x = event.clientX;
 	mouse.y = event.clientY;
 	mouse_adapted.x = (event.clientX / window.innerWidth) * 2 - 1;
-	mouse_adapted.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	mouse_adapted.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
 function render() {
@@ -311,13 +317,18 @@ function render() {
 	// calculate objects intersecting the picking ray
 	const intersects = raycaster.intersectObjects(myMarble.orbitals.children);
 
+
 	if (intersects.length > 0) {
+
+
 		// on hover
 		if (INTERSECTED != intersects[0].object) {
+
 			if (INTERSECTED) {
 				INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
-				if (!INTERSECTED.selected) myMarble.removeOrbit(INTERSECTED.orbit);
+				if (!INTERSECTED.selected) myMarble.removeOrbit(INTERSECTED.orbit)
 			}
+
 
 			// highlight
 			INTERSECTED = intersects[0].object;
@@ -326,62 +337,74 @@ function render() {
 			INTERSECTED.material.emissive.setHex(0xffff00);
 			INTERSECTED.material.emissiveIntensity = 0.4;
 			// coordinates tooltip
-			document.getElementById("tooltip").innerHTML =
-				"X : " +
-				INTERSECTED.position.x.toString() +
-				"<br> Y : " +
-				INTERSECTED.position.y.toString() +
-				"<br> Z : " +
-				INTERSECTED.position.z.toString();
+			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
 
-			document.getElementById("tooltip").style.display = "block";
+			document.getElementById('tooltip').style.display = 'block';
 			myMarble.addOrbit(INTERSECTED.orbit);
-		} else {
-			document.getElementById("tooltip").innerHTML =
-				"X : " +
-				INTERSECTED.position.x.toString() +
-				"<br> Y : " +
-				INTERSECTED.position.y.toString() +
-				"<br> Z : " +
-				INTERSECTED.position.z.toString();
+
+		}
+		else {
+			document.getElementById('tooltip').innerHTML = "X : " + INTERSECTED.position.x.toString() + "<br> Y : " + INTERSECTED.position.y.toString() + "<br> Z : " + INTERSECTED.position.z.toString();
 			document.body.style.cursor = "pointer";
 		}
+
 	}
-	//on leave
+	//on leave 
 	else {
 		// highlight
 		if (INTERSECTED) {
 			INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
 			//coordinates tooltip
-			document.getElementById("tooltip").style.display = "none";
+			document.getElementById('tooltip').style.display = 'none';
 			if (!INTERSECTED.selected) myMarble.removeOrbit(INTERSECTED.orbit);
 		}
 		INTERSECTED = null;
 		document.body.style.cursor = "default";
+
 	}
+
+
 }
-window.addEventListener("mousemove", onMouseMove, false);
+window.addEventListener('mousemove', onMouseMove, false);
+
+function updateBox(debris) {
+
+	document.getElementById('debris_name').innerHTML = debris.data.name + " " + debris.data.intlDesignator;
+	document.getElementById('debris_lDate').innerHTML = debris.data[0];
+	document.getElementById('debris_country').innerHTML = debris.data.country;
+	document.getElementById('debris_longitude').innerHTML = debris.position[0];
+	document.getElementById('debris_latitude').innerHTML = debris.position[1];
+	document.getElementById('debris_altitude').innerHTML = debris.position[2];
+	document.getElementById('debris_velocity').innerHTML = debris.velocity;
+
+
+}
+
 window.addEventListener("click", () => {
 	if (INTERSECTED) {
-		if (ACTIVE && ACTIVE != INTERSECTED) {
-			ACTIVE.selected = false;
-			myMarble.removeOrbit(ACTIVE.orbit);
-		}
+		if (ACTIVE && ACTIVE != INTERSECTED) { ACTIVE.selected = false; myMarble.removeOrbit(ACTIVE.orbit); }
+		document.getElementById('debris-info').style.display = 'block';
 		ACTIVE = INTERSECTED;
 		console.log(ACTIVE.color);
-		INTERSECTED.selected = true;
+		ACTIVE.selected = true;
+		updateBox(ACTIVE);
 	}
-});
+}
+);
 
 render();
+//getElementById('').addEventListener( 'onchange', funct1, false );
+//getElementById('').addEventListener( 'onchange', funct1, false );
 
 function onWindowResize() {
+
 	myMarble.camera.aspect = window.innerWidth / window.innerHeight;
 	myMarble.camera.updateProjectionMatrix();
 
 	myMarble.renderer.setSize(window.innerWidth, window.innerHeight);
+
 }
-window.addEventListener("resize", onWindowResize);
+window.addEventListener('resize', onWindowResize);
 
 function modelCoords(realCoords) {
 	var x, y, z;
@@ -391,29 +414,23 @@ function modelCoords(realCoords) {
 	x = intr * Math.cos(realCoords[1] + 0.015);
 	z = intr * Math.sin(realCoords[1] + 0.015);
 
-	return new THREE.Vector3(x, y, z);
+	return (new THREE.Vector3(x, y, z));
 }
 
-$(document).ready(function () {
-	$(".spinner").click(function () {
-		$(".main").animate(
-			{
-				left: "-1500px",
-				opacity: "0",
-			},
-			2000
+$(document).ready(
+	function () {
+		$('.spinner').click(
+			function () {
+				$('.main').animate({
+					left: '-1500px',
+					opacity: '0',
+				}, 2000);
+				$('#menu-btn').show(2000);
+				myMarble.entrance();
+			}
 		);
-		$("#menu-btn").show(2000);
-		myMarble.entrance();
-	});
-});
-
-(async () => {
-	const debris = await fetchRandomDebris(2000);
-
-})
-
-
+	}
+);
 /*
 //satellite import
 var my_satellite;
@@ -476,3 +493,7 @@ var satellite_angle =   0.00;
 	
 }
 follow_debris(); */
+(async () => {
+	currentState.allDebris = await fetchRandomDebris(2000);
+
+})
