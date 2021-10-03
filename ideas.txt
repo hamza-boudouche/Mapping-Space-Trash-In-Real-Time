@@ -16,19 +16,21 @@ first get the first 20 objects, and store the number of objects fetched, and the
 				catalogNumber,
 				type,
 				country,
+				inclination,
+				apogee,
+				perigee,
+				launchYear,
+				line1,
+				line2
 			]
 		}
 
 		excluded = 
 		{
-			inclination,
-			apogee,
-			perigee,
 			file,
 			launchSiteCode,
 			launchDate,
 			rcsValue,
-			launchYear,
 			orbitalPeriod,
 		}
 

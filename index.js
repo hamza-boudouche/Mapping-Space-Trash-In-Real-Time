@@ -16,7 +16,7 @@ const {
 } = require('./helpers')
 
 const app = express()
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 5001
 const corsOptions = {
 	origin: '*',
 	optionsSuccessStatus: 200,
@@ -33,11 +33,11 @@ const setUp = async (client) => {
 	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/cosmos-2251-debris.txt')
 	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/iridium-33-debris.txt')
 	await getTleFileAndParse(client, 'https://celestrak.com/NORAD/elements/1999-025.txt')
-
+	console.log("all cashed")
 	setInterval(async () => {
 		const objects = await getObjects(process.env.LIMIT, process.env.OFFSET);
 		await writeObjectsToCash(client, objects);
-	}, 60 * 60 * 1000);
+	}, 60 * 60 * 4 * 1000);
 	// const debris = await getObjectsRequest(redisClient, 20);
 	// console.log(debris)
 	// debris.forEach(deb => console.log(deb.catalogNumber))

@@ -35,32 +35,22 @@ const getObjects = async (limit, offset) => {
 	return res;
 }
 
-const getTle = async (catalogNumber) => {
-	const response = await axios.get(`https://celestrak.com/NORAD/elements/gp.php?CATNR=${catalogNumber}&FORMAT=2LE`)
-	const body = response.data;
-	if (body === 'No GP data found') {
-		console.log(catalogNumber + ' failed')
-		return -1;
-	}
-	const res = body.split('\r\n')
-	return [res[0], res[1]];
-}
-
-
-
 const getColliding = (client, tracked, date) => {
 	let myTree = new Quadtree({
 		x: 0,
 		y: 0,
-		width: 15,
-		height: 15
+		width: 20,
+		height: 20
 	}, 4);
 	for (let i = 0; i < tracked; i++) {
-		let obj = {
+		const obj = {
 			catalogNumber: tracked[i].catalogNumber,
-			x
+			x: tracked[i].longitude - 20,
+			y: tracked[i].latitude + 40,
+			width: 1,
+			height: 1
 		}
-		myTree.insert()
+		myTree.insert(obj)
 	}
 }
 

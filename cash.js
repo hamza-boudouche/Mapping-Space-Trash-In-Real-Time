@@ -16,15 +16,15 @@ const writeObjectsToCash = async (client, objects) => {
 	const _fn = async (object) => {
 		await client.set(object.catalogNumber, JSON.stringify(object))
 		// store catalog numbers in array for easy access (looping throught objects)
-		catalogNumbers.push(object.catalogNumber)
-		object.id = object.catalogNumber
+		// catalogNumbers.push(object.catalogNumber)
+		// object.id = object.catalogNumber
 		// keeps track of count of objects
-		lnCatalogNumbers++
+		// lnCatalogNumbers++
 	}
 	for (let i = 0; i < objects.length; i++) {
 		await _fn(objects[i])
 	}
-	console.log(lnCatalogNumbers)
+	// console.log(lnCatalogNumbers)
 	objects.forEach((object) => {
 		object.id = object.catalogNumber
 	});
@@ -57,6 +57,7 @@ const getObjectsRequest = async (client, count = 20) => {
 	//        if not skip
 
 	// check if catalogNumbers array is populated
+	console.log(`lnCatalogNumber: ${lnCatalogNumbers}`)
 	if (lnCatalogNumbers === 0) {
 		return
 	}
@@ -71,24 +72,17 @@ const getObjectsRequest = async (client, count = 20) => {
 				r = -1;
 			}
 		} while (r == -1);
-		const obj = await getObject(client, catalogNumbers[r])
-		const objWithGP = await getOrbitAndInfoRequest(client, obj.catalogNumber, new Date())
-		if (objWithGP !== -1) {
+		const obj = await getOrbitAndInfoRequest(client, catalogNumbers[r])
+		// const objWithGP = await getOrbitAndInfoRequest(client, obj.catalogNumber, new Date())
+		if (obj !== -1) {
 			res.push(obj)
 			prev.push(r)
 		}
+		// res.push(obj)
+		// prev.push(r)
 	}
-	const toReturn = res.map(obj => {
-		const objTrunk = {
-			name: obj.name,
-			intlDesignator: obj.intlDesignator,
-			catalogNumber: obj.catalogNumber,
-			type: obj.type,
-			country: obj.country,
-		}
-		return objTrunk
-	})
-	return toReturn
+
+	return res
 	// const randomCatalogNumbersIndex = []
 	// while (randomCatalogNumbersIndex.length < count) {
 	// 	let r = Math.floor(Math.random() * lnCatalogNumbers);
@@ -143,7 +137,17 @@ const getObjectsRequestExcludes = async (client, count, existing) => {
 	return res
 }
 
-
+const getTle = async (catalogNumber) => {
+	const response = await axios.get(`https://celestrak.com/NORAD/elements/gp.php?CATNR=${catalogNumber}&FORMAT=2LE`)
+	console.log('requested celestrak ' + catalogNumber)
+	const body = response.data;
+	if (body === 'No GP data found') {
+		console.log(catalogNumber + ' failed')
+		return -1;
+	}
+	const res = body.split('\r\n')
+	return [res[0], res[1]];
+}
 
 const autoSuggest = (query) => {
 	// get auto suggestions using miniSearch
@@ -191,57 +195,69 @@ const getTleFileAndParse = async (client, link) => {
 	s.push(null)
 
 	let lr = new LineByLineReader(s);
-	let [line1, line2, line3] = ['', '', '']
+	let [line1, line2, line3] = ['.', '.', '.'];
 	lr.on('line', async (line) => {
 		// pause emitting of lines...
 		// console.log(line)
 		lr.pause();
+		console.log(`[${line1},${line2},${line3}]`)
 		// ...do your asynchronous line processing..
-		if (line1 == '') {
+		if (line1 == '.') {
 			line1 = line
 			console.log(line)
 			console.log(' --------- assigned to 1')
-		} else if (line2 == '') {
+		} else if (line2 == '.') {
 			line2 = line
 			console.log(line)
 			console.log(' --------- assigned to 2')
-		} else if (line3 == '') {
+		} else if (line3 == '.') {
 			line3 = line
 			console.log(line)
 			console.log(' --------- assigned to 3')
-			const posAndVel = parseTle(line2, line3)
+			// const posAndVel = parseTle(line2, line3)
 			// else retreive data from celestrack api (stored in cash)
 			// const catalogNumber = TLE.parse(`${line1}\r\n${line2}\r\n${line3}`).number
 			const tle = `${line1}\n${line2}\n${line3}`
 			console.log(tle)
 			const catalogNumber = parser(tle).catalog_number
-			const obj = await getObject(client, catalogNumber)
-			const res = { ...obj, ...posAndVel }
-			await client.set(`tle-${catalogNumber}`, JSON.stringify(res), 'EX', 60 * 60)
-			line1 = ''
-			line2 = ''
-			line3 = ''
+			// const obj = await getObject(client, catalogNumber)
+			const res = {
+				firstLine: line2,
+				secondLine: line3
+			}
+			await client.set(`tle-${catalogNumber}`, JSON.stringify(res))
+			line1 = '.'
+			line2 = '.'
+			line3 = '.'
+			catalogNumbers.push(catalogNumber)
+			console.log(catalogNumber)
+			// keeps track of count of objects
+			lnCatalogNumbers++
 		}
 		lr.resume();
 	})
 }
 
-const getOrbitAndInfoRequest = async (client, catalogNumber, date) => {
+const getOrbitAndInfoRequest = async (client, catalogNumber, date = new Date()) => {
 	// check if object data has already been requested
 	const existing = await client.get(`tle-${catalogNumber}`)
+	const info = await client.get(catalogNumber)
 	// if so return cashed object data
-	if (existing) {
-		return JSON.parse(existing)
+	if (existing && info) {
+		const firstPart = JSON.parse(existing)
+		const secondPart = JSON.parse(info)
+		return { ...firstPart, ...secondPart }
 	}
-	// else retreive data from celestrack api (stored in cash)
-	const obj = await getObject(client, catalogNumber)
-	const posAndVel = await getPosAndVel(catalogNumber, date)
-	if (posAndVel === -1) {
-		return -1;
-	}
-	const res = { ...obj, ...posAndVel }
-	await client.set(`tle-${catalogNumber}`, JSON.stringify(res), 'EX', 60 * 60)
-	return res
+	return -1
+	// // else retreive data from celestrack api (and store it in cash)
+	// const obj = await getObject(client, catalogNumber)
+	// const posAndVel = await getPosAndVel(catalogNumber, date)
+	// if (posAndVel === -1) {
+	// 	return -1;
+	// }
+	// const res = { ...obj, ...posAndVel }
+	// await client.set(`tle-${catalogNumber}`, JSON.stringify(res))
+	// return res
 }
 
 module.exports = {
